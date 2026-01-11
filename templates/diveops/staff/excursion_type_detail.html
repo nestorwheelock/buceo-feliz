@@ -1,0 +1,1121 @@
+{% extends "diveops/staff/_base.html" %}
+{% load portal_ui_tags %}
+
+{% block breadcrumb %}
+<li>
+    <div class="flex items-center">
+        <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+        </svg>
+        <a href="{% url 'diveops:excursion-type-list' %}" class="ml-2 text-sm font-medium text-gray-500 hover:text-gray-700">Excursion Types</a>
+    </div>
+</li>
+<li>
+    <div class="flex items-center">
+        <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+        </svg>
+        <span class="ml-2 text-sm font-medium text-gray-500">{{ page_title }}</span>
+    </div>
+</li>
+{% endblock %}
+
+{% block staff_content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ excursion_type.name }}</h1>
+            {% if excursion_type.description %}
+            <p class="text-gray-600">{{ excursion_type.description }}</p>
+            {% endif %}
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'diveops:excursion-type-edit' pk=excursion_type.pk %}"
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                {% icon "edit" "w-4 h-4 mr-2" %}
+                Edit
+            </a>
+            <a href="{% url 'diveops:excursion-type-delete' pk=excursion_type.pk %}"
+               class="inline-flex items-center px-4 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50">
+                {% icon "trash-2" "w-4 h-4 mr-2" %}
+                Delete
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Type Details -->
+        <div class="lg:col-span-1 space-y-6">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                    <h3 class="text-lg font-medium text-gray-900">Details</h3>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Status</dt>
+                        <dd class="mt-1">
+                            {% if excursion_type.is_active %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactive</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Dive Mode</dt>
+                        <dd class="mt-1">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if excursion_type.dive_mode == 'boat' %}bg-blue-100 text-blue-800
+                                {% elif excursion_type.dive_mode == 'shore' %}bg-green-100 text-green-800
+                                {% elif excursion_type.dive_mode == 'cenote' %}bg-cyan-100 text-cyan-800
+                                {% elif excursion_type.dive_mode == 'cavern' %}bg-purple-100 text-purple-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ excursion_type.get_dive_mode_display }}
+                            </span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Time of Day</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ excursion_type.get_time_of_day_display }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Maximum Depth</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            {% if excursion_type.max_depth_meters %}{{ excursion_type.max_depth_meters }} meters{% else %}<span class="text-gray-400 italic">Calculated from dive plans</span>{% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Typical Duration</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ excursion_type.typical_duration_minutes }} minutes</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Dives per Excursion</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ excursion_type.dives_per_excursion }}</dd>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing Card -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                    <h3 class="text-lg font-medium text-gray-900">Pricing</h3>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Base Price</dt>
+                        <dd class="mt-1 text-2xl font-semibold text-gray-900">{{ excursion_type.currency }} {{ excursion_type.base_price }}</dd>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requirements Card -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                    <h3 class="text-lg font-medium text-gray-900">Requirements</h3>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Minimum Certification</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            {% if excursion_type.min_certification_level %}
+                                {{ excursion_type.min_certification_level.name }}
+                                <span class="text-gray-500">({{ excursion_type.min_certification_level.agency.name }})</span>
+                            {% else %}
+                                <span class="text-gray-400">None required</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Certification Check</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            {% if excursion_type.requires_cert %}
+                                <span class="text-green-600">Required</span>
+                            {% else %}
+                                <span class="text-gray-400">Not required (e.g., DSD)</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    {% if excursion_type.is_training %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Type</dt>
+                        <dd class="mt-1">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                Training Dive
+                            </span>
+                        </dd>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Dive Planning -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Dive Planning</h3>
+                    <button type="button" id="add-dive-btn"
+                            class="inline-flex items-center px-3 py-1.5 border border-transparent rounded text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                        {% icon "plus" "w-4 h-4 mr-1" %}
+                        Add Dive
+                    </button>
+                </div>
+
+                {% if dive_templates %}
+                <div class="divide-y divide-gray-200">
+                    {% for dive in dive_templates %}
+                    <!-- Surface Interval (shown before dives 2+) -->
+                    {% if dive.surface_interval_minutes %}
+                    <div class="px-4 py-2 bg-cyan-50 border-l-4 border-cyan-400">
+                        <div class="flex items-center text-sm text-cyan-700">
+                            {% icon "sun" "w-4 h-4 mr-2" %}
+                            <span class="font-medium">Surface Interval:</span>
+                            <span class="ml-1">{{ dive.surface_interval_minutes }} minutes</span>
+                            <span class="ml-2 text-cyan-500">(off-gassing at surface before dive {{ dive.sequence }})</span>
+                        </div>
+                    </div>
+                    {% elif dive.sequence > 1 %}
+                    <div class="px-4 py-2 bg-amber-50 border-l-4 border-amber-400">
+                        <div class="flex items-center text-sm text-amber-700">
+                            {% icon "alert-triangle" "w-4 h-4 mr-2" %}
+                            <span>Surface interval not set for dive {{ dive.sequence }}</span>
+                            <a href="{% url 'diveops:excursion-type-dive-edit' pk=dive.pk %}" class="ml-2 underline">Set now</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="p-4 hover:bg-gray-50">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center font-semibold text-sm">
+                                    {{ dive.sequence }}
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-900">
+                                        <a href="{% url 'diveops:dive-plan-detail' pk=dive.pk %}"
+                                           target="_blank"
+                                           class="text-blue-600 hover:text-blue-800 hover:underline">
+                                            {{ dive.name }}
+                                        </a>
+                                    </h4>
+                                    {% if dive.description %}
+                                    <p class="text-sm text-gray-500 mt-1">{{ dive.description }}</p>
+                                    {% endif %}
+                                    <div class="mt-2 flex flex-wrap gap-2 text-xs text-gray-500">
+                                        {% if dive.planned_depth_meters %}
+                                        <span class="inline-flex items-center">
+                                            {% icon "arrow-down" "w-3 h-3 mr-1" %}
+                                            {{ dive.planned_depth_meters }}m depth
+                                        </span>
+                                        {% endif %}
+                                        {% if dive.planned_duration_minutes %}
+                                        <span class="inline-flex items-center">
+                                            {% icon "clock" "w-3 h-3 mr-1" %}
+                                            {{ dive.planned_duration_minutes }} min
+                                        </span>
+                                        {% endif %}
+                                        {% if dive.offset_minutes > 0 %}
+                                        <span class="inline-flex items-center">
+                                            {% icon "fast-forward" "w-3 h-3 mr-1" %}
+                                            +{{ dive.offset_minutes }} min offset
+                                        </span>
+                                        {% endif %}
+                                        {% if dive.min_certification_level %}
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-800">
+                                            {{ dive.min_certification_level.name }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <a href="{% url 'diveops:excursion-type-dive-edit' pk=dive.pk %}"
+                                   class="text-blue-600 hover:text-blue-900 text-sm">Edit</a>
+                                <a href="{% url 'diveops:excursion-type-dive-delete' pk=dive.pk %}"
+                                   class="text-red-600 hover:text-red-900 text-sm">Delete</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="px-6 py-12 text-center">
+                    <div class="text-gray-400 mb-4">
+                        {% icon "layers" "w-12 h-12 mx-auto" %}
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-1">No dive plans</h3>
+                    <p class="text-gray-500 mb-4">Define the individual dives that make up this excursion type.</p>
+                    <a href="{% url 'diveops:excursion-type-dive-create' type_pk=excursion_type.pk %}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                        {% icon "plus" "w-4 h-4 mr-2" %}
+                        Add First Dive
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Tissue Loading Profile (Phase 1 - Simple) -->
+            {% if dive_templates %}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mt-6">
+                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <h3 class="text-lg font-medium text-gray-900">Tissue Loading Profile</h3>
+                        <span class="ml-2 text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded">EPHEMERAL</span>
+                    </div>
+                    <button type="button" id="calculate-profile-btn"
+                            class="inline-flex items-center px-3 py-1.5 border border-transparent rounded text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700">
+                        {% icon "refresh-cw" "w-4 h-4 mr-1" %}
+                        Recalculate Profile
+                    </button>
+                </div>
+
+                <!-- Gradient Factor Settings -->
+                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50/50">
+                    <div class="flex flex-wrap items-center gap-4">
+                        <div class="flex items-center">
+                            <label class="text-sm font-medium text-gray-700 mr-2">Gradient Factors:</label>
+                            <select id="gf-preset" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-cyan-500 focus:ring-cyan-500">
+                                <option value="100/100">100/100 - None (Standard)</option>
+                                <option value="85/100">85/100 - Light</option>
+                                <option value="70/85">70/85 - Moderate</option>
+                                <option value="50/70">50/70 - Conservative</option>
+                                <option value="40/70">40/70 - Very Conservative</option>
+                                <option value="30/85">30/85 - GUE Standard</option>
+                                <option value="custom">Custom...</option>
+                            </select>
+                        </div>
+                        <div id="gf-custom-inputs" class="hidden flex items-center gap-3">
+                            <div class="flex items-center">
+                                <label for="gf-low-input" class="text-xs text-gray-500 mr-1">Low:</label>
+                                <input type="number" id="gf-low-input" min="30" max="100" value="100"
+                                       class="w-16 text-sm border-gray-300 rounded-md shadow-sm focus:border-cyan-500 focus:ring-cyan-500">
+                            </div>
+                            <div class="flex items-center">
+                                <label for="gf-high-input" class="text-xs text-gray-500 mr-1">High:</label>
+                                <input type="number" id="gf-high-input" min="30" max="100" value="100"
+                                       class="w-16 text-sm border-gray-300 rounded-md shadow-sm focus:border-cyan-500 focus:ring-cyan-500">
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            <span id="gf-display" class="font-mono bg-gray-100 px-1.5 py-0.5 rounded">GF 100/100</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Lower values = more conservative (shorter NDL, earlier warnings). GF Low applies at depth, GF High at surface.
+                    </p>
+                </div>
+
+                <div class="p-4">
+                    <!-- Loading State -->
+                    <div id="profile-loading" class="hidden text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto"></div>
+                        <p class="text-gray-500 mt-2">Calculating tissue loading...</p>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="profile-results" class="hidden space-y-4">
+                        <!-- Conservatism Indicator -->
+                        <div id="conservatism-indicator" class="rounded-lg p-4 border-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div id="conservatism-icon" class="w-10 h-10 rounded-full flex items-center justify-center mr-3">
+                                        <!-- Icon inserted by JS -->
+                                    </div>
+                                    <div>
+                                        <div id="conservatism-label" class="text-lg font-bold">-</div>
+                                        <div id="conservatism-desc" class="text-sm">-</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-gray-500 uppercase">Peak N2 Loading</div>
+                                    <div class="text-xl font-mono" id="stat-max-loading">-</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Stats -->
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="bg-gray-50 rounded-lg p-3 text-center">
+                                <div class="text-2xl font-bold text-gray-900" id="stat-dives">-</div>
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">Dives</div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3 text-center">
+                                <div class="text-2xl font-bold text-cyan-600" id="stat-final-loading">-</div>
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">End Loading</div>
+                                <div class="text-xs text-gray-400">(vs 100% surface)</div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3 text-center">
+                                <div class="text-2xl font-bold text-gray-900" id="stat-total-time">-</div>
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">Total Time</div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3 text-center">
+                                <div class="text-2xl font-bold text-purple-600 font-mono" id="stat-gf">-</div>
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">GF Low/High</div>
+                                <div class="text-xs text-gray-400">(conservatism)</div>
+                            </div>
+                        </div>
+
+                        <!-- Dive Profile Chart -->
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Depth Profile</h4>
+                            <div class="relative" style="height: 250px;">
+                                <canvas id="dive-profile-chart"></canvas>
+                            </div>
+                            <div class="flex items-center justify-center gap-6 mt-3 text-xs text-gray-500">
+                                <span class="flex items-center">
+                                    <span class="w-3 h-3 bg-blue-500 rounded mr-1"></span>
+                                    Depth
+                                </span>
+                                <span class="flex items-center">
+                                    <span class="w-3 h-3 bg-cyan-300 rounded mr-1"></span>
+                                    Surface Interval
+                                </span>
+                                <span class="flex items-center">
+                                    <span class="w-3 h-0.5 bg-orange-500 mr-1" style="display: inline-block;"></span>
+                                    Tissue Loading %
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Dive Results Table -->
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Dive</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Depth</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">NDL</th>
+                                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">PG</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Loading</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="profile-table-body" class="bg-white divide-y divide-gray-200">
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pressure Group Legend -->
+                        <div class="text-xs text-gray-500 mt-2">
+                            <span class="font-medium">PG</span> = Approximate PADI Pressure Group (A=surface, Z=limit).
+                            <span class="font-medium">NDL</span> = No Decompression Limit at start of dive.
+                        </div>
+
+                        <!-- Warning about data -->
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    {% icon "alert-triangle" "w-5 h-5 text-amber-600" %}
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-amber-700">
+                                        <strong>Planning Data Only:</strong> These calculations are ephemeral and not stored.
+                                        Actual tissue loading depends on individual diver physiology and conditions.
+                                        Always follow conservative dive planning practices.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Initial State -->
+                    <div id="profile-initial" class="text-center py-8">
+                        <div class="text-gray-400 mb-4">
+                            {% icon "activity" "w-12 h-12 mx-auto" %}
+                        </div>
+                        <h4 class="text-lg font-medium text-gray-900 mb-1">Tissue Loading Calculator</h4>
+                        <p class="text-gray-500 text-sm mb-4">
+                            Calculate Bühlmann ZHL-16C tissue loading for this dive profile.<br>
+                            Results show how nitrogen accumulates across multiple dives.
+                        </p>
+                        <p class="text-xs text-gray-400">
+                            Calculations use standard 16-compartment model with half-times from 4 to 635 minutes.
+                        </p>
+                    </div>
+
+                    <!-- Error State -->
+                    <div id="profile-error" class="hidden text-center py-8">
+                        <div class="text-red-400 mb-4">
+                            {% icon "alert-circle" "w-12 h-12 mx-auto" %}
+                        </div>
+                        <h4 class="text-lg font-medium text-gray-900 mb-1">Calculation Error</h4>
+                        <p class="text-red-600 text-sm" id="profile-error-message">-</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Suitable Sites -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mt-6">
+                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <h3 class="text-lg font-medium text-gray-900">Suitable Sites</h3>
+                        <span class="ml-2 text-sm text-gray-500">({{ excursion_type.suitable_sites.count }})</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <a href="{% url 'diveops:staff-site-list' %}"
+                           class="text-sm text-blue-600 hover:text-blue-800">
+                            View all sites
+                        </a>
+                        <span class="text-gray-300">|</span>
+                        <a href="{% url 'diveops:excursion-type-add-site' pk=excursion_type.pk %}"
+                           class="inline-flex items-center text-sm text-green-600 hover:text-green-800">
+                            {% icon "plus" "w-4 h-4 mr-1" %}
+                            Quick add
+                        </a>
+                    </div>
+                </div>
+                <div class="p-4">
+                    {% if excursion_type.suitable_sites.exists %}
+                    <div class="flex flex-wrap gap-2">
+                        {% for site in excursion_type.suitable_sites.all %}
+                        <div class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800 group">
+                            <a href="{% url 'diveops:staff-site-detail' pk=site.pk %}" class="flex items-center hover:text-blue-600">
+                                {% icon "map-pin" "w-4 h-4 mr-1" %}
+                                {{ site.name }}
+                            </a>
+                            <form method="post" action="{% url 'diveops:excursion-type-remove-site' pk=excursion_type.pk site_pk=site.pk %}" class="ml-2">
+                                {% csrf_token %}
+                                <button type="submit" class="text-gray-400 hover:text-red-600" title="Remove site">
+                                    {% icon "x" "w-4 h-4" %}
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <div class="text-gray-400 mb-2">
+                            {% icon "map-pin" "w-8 h-8 mx-auto" %}
+                        </div>
+                        <p class="text-gray-500 text-sm">No suitable sites configured</p>
+                        <p class="text-gray-400 text-xs mt-1">Add sites to restrict which locations can run this excursion type</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Dive Modal -->
+<div id="add-dive-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div id="modal-backdrop" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+        <!-- Modal panel -->
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900" id="modal-title">Add Dive to Excursion Type</h3>
+                    <button type="button" id="modal-close-btn" class="text-gray-400 hover:text-gray-500">
+                        {% icon "x" "w-6 h-6" %}
+                    </button>
+                </div>
+
+                <!-- Available Dives List -->
+                {% if available_dives %}
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 mb-3">Select an existing dive plan to add:</p>
+                    <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-200">
+                        {% for dive in available_dives %}
+                        <form method="post" action="{% url 'diveops:excursion-type-dive-link' type_pk=excursion_type.pk dive_pk=dive.pk %}" class="block">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full text-left px-4 py-3 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ dive.name }}</p>
+                                        <p class="text-xs text-gray-500">
+                                            {% if dive.dive_site %}{{ dive.dive_site.name }} • {% endif %}
+                                            {% if dive.planned_depth_meters %}{{ dive.planned_depth_meters }}m{% endif %}
+                                            {% if dive.planned_duration_minutes %} • {{ dive.planned_duration_minutes }} min{% endif %}
+                                        </p>
+                                    </div>
+                                    <span class="text-blue-600">
+                                        {% icon "plus-circle" "w-5 h-5" %}
+                                    </span>
+                                </div>
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="mb-4 text-center py-4">
+                    <p class="text-sm text-gray-500">No existing dive plans available to add.</p>
+                </div>
+                {% endif %}
+
+                <!-- Create New Option -->
+                <div class="border-t border-gray-200 pt-4">
+                    <p class="text-sm text-gray-600 mb-3">Or create a new dive plan:</p>
+                    <a href="{% url 'diveops:excursion-type-dive-create' type_pk=excursion_type.pk %}"
+                       class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                        {% icon "plus" "w-4 h-4 mr-2" %}
+                        Create New Dive Plan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('add-dive-modal');
+    const openBtn = document.getElementById('add-dive-btn');
+    const closeBtn = document.getElementById('modal-close-btn');
+    const backdrop = document.getElementById('modal-backdrop');
+
+    function openModal() {
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
+
+    function closeModal() {
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', closeModal);
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closeModal();
+        }
+    });
+});
+</script>
+
+{% if dive_templates %}
+<!-- Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calculateBtn = document.getElementById('calculate-profile-btn');
+    const loadingEl = document.getElementById('profile-loading');
+    const resultsEl = document.getElementById('profile-results');
+    const initialEl = document.getElementById('profile-initial');
+    const errorEl = document.getElementById('profile-error');
+    const errorMsgEl = document.getElementById('profile-error-message');
+    const tableBody = document.getElementById('profile-table-body');
+    const chartCanvas = document.getElementById('dive-profile-chart');
+
+    // Stats elements
+    const statDives = document.getElementById('stat-dives');
+    const statFinalLoading = document.getElementById('stat-final-loading');
+    const statMaxLoading = document.getElementById('stat-max-loading');
+    const statTotalTime = document.getElementById('stat-total-time');
+    const statGf = document.getElementById('stat-gf');
+
+    // Conservatism indicator elements
+    const conservatismIndicator = document.getElementById('conservatism-indicator');
+    const conservatismIcon = document.getElementById('conservatism-icon');
+    const conservatismLabel = document.getElementById('conservatism-label');
+    const conservatismDesc = document.getElementById('conservatism-desc');
+
+    // Gradient Factor elements
+    const gfPreset = document.getElementById('gf-preset');
+    const gfCustomInputs = document.getElementById('gf-custom-inputs');
+    const gfLowInput = document.getElementById('gf-low-input');
+    const gfHighInput = document.getElementById('gf-high-input');
+    const gfDisplay = document.getElementById('gf-display');
+
+    let profileChart = null;
+
+    // Gradient Factor handlers - ALWAYS read from UI, never cache
+    function getGfValues() {
+        // Read directly from dropdown/inputs at request time - no caching
+        const presetValue = gfPreset.value;
+        if (presetValue === 'custom') {
+            const low = Math.max(30, Math.min(100, parseInt(gfLowInput.value) || 100));
+            const high = Math.max(30, Math.min(100, parseInt(gfHighInput.value) || 100));
+            return { gfLow: Math.min(low, high), gfHigh: Math.max(low, high) };
+        } else {
+            const [low, high] = presetValue.split('/').map(Number);
+            return { gfLow: low, gfHigh: high };
+        }
+    }
+
+    function updateGfDisplay() {
+        const { gfLow, gfHigh } = getGfValues();
+        gfDisplay.textContent = `GF ${gfLow}/${gfHigh}`;
+    }
+
+    gfPreset.addEventListener('change', function() {
+        const value = this.value;
+        if (value === 'custom') {
+            gfCustomInputs.classList.remove('hidden');
+        } else {
+            gfCustomInputs.classList.add('hidden');
+            const [low, high] = value.split('/').map(Number);
+            gfLowInput.value = low;
+            gfHighInput.value = high;
+        }
+        updateGfDisplay();
+    });
+
+    gfLowInput.addEventListener('change', function() {
+        let val = Math.max(30, Math.min(100, parseInt(this.value) || 100));
+        this.value = val;
+        // Ensure low <= high
+        if (val > parseInt(gfHighInput.value)) {
+            gfHighInput.value = val;
+        }
+        updateGfDisplay();
+    });
+
+    gfHighInput.addEventListener('change', function() {
+        let val = Math.max(30, Math.min(100, parseInt(this.value) || 100));
+        this.value = val;
+        // Ensure low <= high
+        if (parseInt(gfLowInput.value) > val) {
+            gfLowInput.value = val;
+        }
+        updateGfDisplay();
+    });
+
+    // Initialize display on page load
+    updateGfDisplay();
+
+    function showState(state) {
+        loadingEl.classList.add('hidden');
+        resultsEl.classList.add('hidden');
+        initialEl.classList.add('hidden');
+        errorEl.classList.add('hidden');
+
+        if (state === 'loading') loadingEl.classList.remove('hidden');
+        else if (state === 'results') resultsEl.classList.remove('hidden');
+        else if (state === 'initial') initialEl.classList.remove('hidden');
+        else if (state === 'error') errorEl.classList.remove('hidden');
+    }
+
+    function getLoadingColor(percent) {
+        if (percent <= 150) return 'text-green-600';
+        if (percent <= 220) return 'text-yellow-600';
+        if (percent <= 280) return 'text-orange-600';
+        return 'text-red-600';
+    }
+
+    function formatLoading(percent) {
+        return percent.toFixed(1) + '%';
+    }
+
+    function updateConservatismIndicator(maxLoading) {
+        // Conservatism levels based on peak tissue loading
+        // 100% = surface saturation, recreational limits typically allow 200-300%
+        let level, label, desc, bgClass, borderClass, iconBg, icon;
+
+        if (maxLoading <= 180) {
+            level = 'conservative';
+            label = 'Conservative';
+            desc = 'Well within recreational limits. Good safety margins.';
+            bgClass = 'bg-green-50';
+            borderClass = 'border-green-400';
+            iconBg = 'bg-green-500';
+            icon = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+        } else if (maxLoading <= 240) {
+            level = 'moderate';
+            label = 'Moderate';
+            desc = 'Standard recreational profile. Normal nitrogen loading.';
+            bgClass = 'bg-blue-50';
+            borderClass = 'border-blue-400';
+            iconBg = 'bg-blue-500';
+            icon = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+        } else if (maxLoading <= 300) {
+            level = 'aggressive';
+            label = 'Approaching Limits';
+            desc = 'Higher nitrogen loading. Consider longer surface intervals.';
+            bgClass = 'bg-amber-50';
+            borderClass = 'border-amber-400';
+            iconBg = 'bg-amber-500';
+            icon = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+        } else {
+            level = 'caution';
+            label = 'Requires Caution';
+            desc = 'Near decompression limits. Extend surface intervals or reduce depth/time.';
+            bgClass = 'bg-red-50';
+            borderClass = 'border-red-400';
+            iconBg = 'bg-red-500';
+            icon = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+        }
+
+        conservatismIndicator.className = `rounded-lg p-4 border-2 ${bgClass} ${borderClass}`;
+        conservatismIcon.className = `w-10 h-10 rounded-full flex items-center justify-center mr-3 ${iconBg}`;
+        conservatismIcon.innerHTML = icon;
+        conservatismLabel.textContent = label;
+        conservatismLabel.className = 'text-lg font-bold ' + (level === 'caution' ? 'text-red-700' : level === 'aggressive' ? 'text-amber-700' : level === 'moderate' ? 'text-blue-700' : 'text-green-700');
+        conservatismDesc.textContent = desc;
+    }
+
+    function buildChartData(data) {
+        // Build time-series data points for depth and loading
+        const depthPoints = [];
+        const loadingPoints = [];
+        const surfaceIntervalRegions = [];
+        let currentTime = 0;
+
+        data.dive_results.forEach((dive, index) => {
+            // Check for surface interval before this dive
+            const si = data.surface_intervals.find(s => s.before_dive_sequence === dive.sequence);
+            if (si) {
+                // Surface interval: flat line at 0 depth
+                surfaceIntervalRegions.push({
+                    startTime: currentTime,
+                    endTime: currentTime + si.duration_min,
+                    label: `SI: ${si.duration_min}min`
+                });
+                // Depth stays at 0 during surface interval
+                depthPoints.push({ x: currentTime, y: 0 });
+                // Loading at start of SI
+                loadingPoints.push({ x: currentTime, y: si.loading_before_percent });
+                currentTime += si.duration_min;
+                depthPoints.push({ x: currentTime, y: 0 });
+                // Loading at end of SI (after off-gassing)
+                loadingPoints.push({ x: currentTime, y: si.loading_after_percent });
+            }
+
+            // Loading before dive
+            loadingPoints.push({ x: currentTime, y: dive.loading_before_percent });
+
+            // Use profile_segments (raw route_segments) for visualization
+            const segments = dive.profile_segments;
+            if (!segments || segments.length === 0) {
+                throw new Error(`Dive ${dive.sequence} (${dive.name}) has no segments defined`);
+            }
+
+            // Start at surface
+            depthPoints.push({ x: currentTime, y: 0 });
+
+            // Track current depth for segments that don't specify start depth
+            let currentDepth = 0;
+
+            // Plot each segment based on its phase type
+            segments.forEach((seg) => {
+                const phase = seg.phase;
+                const duration = seg.duration_min || 0;
+
+                if (phase === 'descent') {
+                    // Ramp from from_depth_m to to_depth_m
+                    const startDepth = seg.from_depth_m !== undefined ? seg.from_depth_m : currentDepth;
+                    const endDepth = seg.to_depth_m !== undefined ? seg.to_depth_m : seg.depth_m;
+                    depthPoints.push({ x: currentTime, y: startDepth });
+                    currentTime += duration;
+                    depthPoints.push({ x: currentTime, y: endDepth });
+                    currentDepth = endDepth;
+                } else if (phase === 'ascent') {
+                    // Ramp from from_depth_m to to_depth_m (going up)
+                    const startDepth = seg.from_depth_m !== undefined ? seg.from_depth_m : currentDepth;
+                    const endDepth = seg.to_depth_m !== undefined ? seg.to_depth_m : seg.depth_m;
+                    depthPoints.push({ x: currentTime, y: startDepth });
+                    currentTime += duration;
+                    depthPoints.push({ x: currentTime, y: endDepth });
+                    currentDepth = endDepth;
+                } else if (phase === 'level' || phase === 'bottom') {
+                    // Flat line at depth_m
+                    const depth = seg.depth_m !== undefined ? seg.depth_m : currentDepth;
+                    depthPoints.push({ x: currentTime, y: depth });
+                    currentTime += duration;
+                    depthPoints.push({ x: currentTime, y: depth });
+                    currentDepth = depth;
+                } else if (phase === 'safety_stop') {
+                    // Flat line at safety stop depth (typically 5m)
+                    const depth = seg.depth_m !== undefined ? seg.depth_m : 5;
+                    depthPoints.push({ x: currentTime, y: depth });
+                    currentTime += duration;
+                    depthPoints.push({ x: currentTime, y: depth });
+                    currentDepth = depth;
+                } else {
+                    // Unknown phase - treat as level at current depth or seg.depth_m
+                    const depth = seg.depth_m !== undefined ? seg.depth_m : currentDepth;
+                    depthPoints.push({ x: currentTime, y: depth });
+                    currentTime += duration;
+                    depthPoints.push({ x: currentTime, y: depth });
+                    currentDepth = depth;
+                }
+            });
+
+            // If we're not at surface after all segments, add final ascent
+            if (currentDepth > 0) {
+                // 9m/min ascent rate
+                const ascentTime = currentDepth / 9;
+                currentTime += ascentTime;
+                depthPoints.push({ x: currentTime, y: 0 });
+                currentDepth = 0;
+            }
+
+            // Loading after dive
+            loadingPoints.push({ x: currentTime, y: dive.loading_after_percent });
+        });
+
+        return { depthPoints, loadingPoints, surfaceIntervalRegions, totalTime: currentTime };
+    }
+
+    function renderChart(data) {
+        const chartData = buildChartData(data);
+
+        // Destroy existing chart
+        if (profileChart) {
+            profileChart.destroy();
+        }
+
+        // Find max depth for y-axis scaling
+        const maxDepth = Math.max(...chartData.depthPoints.map(p => p.y), 20);
+        const maxLoading = Math.max(...chartData.loadingPoints.map(p => p.y), 150);
+
+        // Create surface interval background regions
+        const surfaceIntervalAnnotations = {};
+        chartData.surfaceIntervalRegions.forEach((si, i) => {
+            surfaceIntervalAnnotations[`si${i}`] = {
+                type: 'box',
+                xMin: si.startTime,
+                xMax: si.endTime,
+                yMin: 0,
+                yMax: maxDepth,
+                backgroundColor: 'rgba(103, 232, 249, 0.3)',
+                borderColor: 'rgba(103, 232, 249, 0.6)',
+                borderWidth: 1
+            };
+        });
+
+        profileChart = new Chart(chartCanvas, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'Depth (m)',
+                        data: chartData.depthPoints,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        borderWidth: 2,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Tissue Loading (%)',
+                        data: chartData.loadingPoints,
+                        borderColor: 'rgb(249, 115, 22)',
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 3,
+                        pointBackgroundColor: 'rgb(249, 115, 22)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.label === 'Depth (m)') {
+                                    return `Depth: ${context.parsed.y.toFixed(1)}m`;
+                                } else {
+                                    return `Loading: ${context.parsed.y.toFixed(1)}%`;
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: 'Time (minutes)',
+                            font: { size: 11 }
+                        },
+                        min: 0,
+                        max: chartData.totalTime,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        reverse: true, // Depth increases downward
+                        title: {
+                            display: true,
+                            text: 'Depth (m)',
+                            font: { size: 11 }
+                        },
+                        min: 0,
+                        max: maxDepth + 5,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Loading (%)',
+                            font: { size: 11 }
+                        },
+                        min: 50,
+                        max: Math.max(maxLoading + 50, 200),
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async function calculateProfile() {
+        showState('loading');
+        calculateBtn.disabled = true;
+
+        try {
+            const { gfLow, gfHigh } = getGfValues();
+            const url = new URL('{% url "diveops:api-excursion-type-tissue-profile" pk=excursion_type.pk %}', window.location.origin);
+            url.searchParams.set('gf_low', gfLow);
+            url.searchParams.set('gf_high', gfHigh);
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+
+            // Find peak loading and calculate total time
+            let maxLoading = 100;
+            let totalTime = 0;
+            data.dive_results.forEach(dive => {
+                maxLoading = Math.max(maxLoading, dive.loading_after_percent);
+                totalTime += dive.runtime_min;
+            });
+            data.surface_intervals.forEach(si => {
+                totalTime += si.duration_min;
+            });
+
+            // Update conservatism indicator (the main visual feedback)
+            updateConservatismIndicator(maxLoading);
+
+            // Update stats
+            statDives.textContent = data.dive_results.length;
+            statFinalLoading.textContent = formatLoading(data.final_loading_percent);
+            statFinalLoading.className = 'text-2xl font-bold ' + getLoadingColor(data.final_loading_percent);
+            statMaxLoading.textContent = formatLoading(maxLoading);
+            statMaxLoading.className = 'text-xl font-mono ' + getLoadingColor(maxLoading);
+            statTotalTime.textContent = totalTime + ' min';
+            statGf.textContent = `${data.gf_low}/${data.gf_high}`;
+
+            // Render the dive profile chart
+            renderChart(data);
+
+            // Build table
+            tableBody.innerHTML = '';
+
+            data.dive_results.forEach((dive, index) => {
+                // Add surface interval row if applicable
+                const si = data.surface_intervals.find(s => s.before_dive_sequence === dive.sequence);
+                if (si) {
+                    const siRow = document.createElement('tr');
+                    siRow.className = 'bg-cyan-50';
+                    siRow.innerHTML = `
+                        <td class="px-3 py-2 text-sm text-cyan-700" colspan="3">
+                            <span class="inline-flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="5"></circle>
+                                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                                </svg>
+                                Surface Interval: ${si.duration_min} min
+                            </span>
+                        </td>
+                        <td class="px-3 py-2 text-sm text-cyan-600">-</td>
+                        <td class="px-3 py-2 text-center">
+                            <span class="inline-flex items-center text-sm font-mono">
+                                <span class="text-cyan-700">${si.pressure_group_before}</span>
+                                <span class="mx-1 text-gray-400">→</span>
+                                <span class="text-cyan-600 font-semibold">${si.pressure_group_after}</span>
+                            </span>
+                        </td>
+                        <td class="px-3 py-2 text-sm">
+                            <span class="${getLoadingColor(si.loading_before_percent)}">${formatLoading(si.loading_before_percent)}</span>
+                            <span class="mx-1 text-gray-400">→</span>
+                            <span class="${getLoadingColor(si.loading_after_percent)}">${formatLoading(si.loading_after_percent)}</span>
+                        </td>
+                    `;
+                    tableBody.appendChild(siRow);
+                }
+
+                // Add dive row
+                const diveRow = document.createElement('tr');
+                const ndlDisplay = dive.ndl_at_start !== null ? (dive.ndl_at_start >= 999 ? '∞' : dive.ndl_at_start + ' min') : '-';
+                diveRow.innerHTML = `
+                    <td class="px-3 py-2">
+                        <span class="inline-flex items-center">
+                            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center font-semibold text-xs mr-2">
+                                ${dive.sequence}
+                            </span>
+                            <span class="text-sm font-medium text-gray-900">${dive.name}</span>
+                        </span>
+                    </td>
+                    <td class="px-3 py-2 text-sm text-gray-900">${dive.max_depth_m.toFixed(1)}m</td>
+                    <td class="px-3 py-2 text-sm text-gray-900">${dive.runtime_min.toFixed(0)} min</td>
+                    <td class="px-3 py-2 text-sm ${dive.ndl_at_start !== null && dive.ndl_at_start < dive.runtime_min ? 'text-red-600 font-semibold' : 'text-gray-600'}">${ndlDisplay}</td>
+                    <td class="px-3 py-2 text-center">
+                        <span class="inline-flex items-center text-sm font-mono">
+                            <span class="text-gray-500">${dive.pressure_group_before}</span>
+                            <span class="mx-1 text-gray-400">→</span>
+                            <span class="text-blue-700 font-semibold">${dive.pressure_group_after}</span>
+                        </span>
+                    </td>
+                    <td class="px-3 py-2 text-sm">
+                        <span class="${getLoadingColor(dive.loading_before_percent)}">${formatLoading(dive.loading_before_percent)}</span>
+                        <span class="mx-1 text-gray-400">→</span>
+                        <span class="font-medium ${getLoadingColor(dive.loading_after_percent)}">${formatLoading(dive.loading_after_percent)}</span>
+                    </td>
+                `;
+                tableBody.appendChild(diveRow);
+            });
+
+            showState('results');
+
+        } catch (error) {
+            console.error('Profile calculation error:', error);
+            errorMsgEl.textContent = error.message || 'Failed to calculate tissue profile';
+            showState('error');
+        } finally {
+            calculateBtn.disabled = false;
+        }
+    }
+
+    calculateBtn.addEventListener('click', calculateProfile);
+
+    // Auto-calculate on page load
+    calculateProfile();
+});
+</script>
+{% endif %}
+{% endblock %}

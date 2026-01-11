@@ -1,0 +1,21 @@
+-r base.txt
+
+# Testing
+pytest>=8.0
+pytest-django>=4.7
+pytest-cov>=4.1
+factory-boy>=3.3
+
+# Linting and formatting
+ruff>=0.1
+black>=24.0
+isort>=5.13
+
+# Development tools
+ipython>=8.0
+django-debug-toolbar>=4.2
+django-extensions>=3.2
+
+# Type checking
+mypy>=1.8
+django-stubs>=4.2

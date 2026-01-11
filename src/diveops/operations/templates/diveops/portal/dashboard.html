@@ -1,0 +1,1126 @@
+{% extends "portal_ui/base_portal.html" %}
+{% load portal_ui_tags %}
+
+{% block page_title %}My Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    @keyframes undulate {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
+        50% { transform: scale(1.02); box-shadow: 0 0 0 8px rgba(234, 179, 8, 0); }
+    }
+    .animate-undulate {
+        animation: undulate 2s ease-in-out infinite;
+    }
+    .animate-undulate:hover {
+        animation-play-state: paused;
+    }
+    @keyframes pulse-border {
+        0%, 100% { border-color: rgb(234 179 8 / 0.5); }
+        50% { border-color: rgb(234 179 8 / 1); }
+    }
+    .animate-pulse-border {
+        animation: pulse-border 1.5s ease-in-out infinite;
+    }
+</style>
+<div class="space-y-6">
+    <!-- Unread Messages Banner -->
+    {% if unread_messages_count > 0 %}
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-sm" x-data="{ dismissed: false }" x-show="!dismissed" x-transition>
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="relative">
+                        {% icon "chat-bubble-left-right" "w-6 h-6 text-blue-600" %}
+                        <span class="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full">
+                            {{ unread_messages_count }}
+                        </span>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-sm font-semibold text-blue-800">
+                        You have {{ unread_messages_count }} unread message{{ unread_messages_count|pluralize }}
+                    </h3>
+                    <p class="text-sm text-blue-700 mt-0.5">
+                        Check your inbox to see what's new from the dive shop.
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <a href="{% url 'portal:messages' %}"
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                    {% icon "mail" "w-4 h-4 mr-1.5" %}
+                    View Messages
+                </a>
+                <button @click="dismissed = true" class="text-blue-400 hover:text-blue-600" title="Dismiss">
+                    {% icon "x" "w-5 h-5" %}
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Welcome Section with Diver Profile -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <div class="flex items-start justify-between">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">
+                    Welcome back{% if diver %}, {{ diver.person.first_name }}{% else %}, {{ user.email }}{% endif %}
+                </h2>
+                {% if diver %}
+                <p class="text-gray-600">
+                    {% if highest_cert %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mr-2">
+                            {{ highest_cert.level.name }}
+                        </span>
+                    {% endif %}
+                    Manage your dives, courses, and orders from your dashboard.
+                </p>
+                {% else %}
+                <p class="text-gray-600">Manage your courses, orders, and dive materials from your dashboard.</p>
+                {% endif %}
+            </div>
+            {% if diver.profile_photo %}
+            <img src="{{ diver.profile_photo.file.url }}" alt="Profile" class="w-16 h-16 rounded-full object-cover">
+            {% endif %}
+        </div>
+        {% if diver %}
+        <!-- Quick Actions -->
+        <div class="mt-4 pt-4 border-t border-gray-200 flex flex-wrap gap-3">
+            <a href="{% url 'portal:preferences_survey' %}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-primary-50 text-primary-700 hover:bg-primary-100">
+                {% icon "clipboard-document-list" "w-4 h-4 mr-1.5" %}
+                Edit Preferences
+            </a>
+            <a href="{% url 'portal:preferences' %}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+                {% icon "user" "w-4 h-4 mr-1.5" %}
+                View Profile
+            </a>
+            <a href="{% url 'portal:orders' %}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">
+                {% icon "shopping-bag" "w-4 h-4 mr-1.5" %}
+                My Orders
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if diver %}
+    <!-- Status Cards Row -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Medical Clearance Card -->
+        <div class="bg-white shadow rounded-lg p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 mr-3 flex items-center justify-center">
+                        {% if medical_status.has_clearance and not medical_status.is_expired %}
+                            {% icon "heart" "w-8 h-8 text-green-500" %}
+                        {% elif medical_status.is_expired %}
+                            {% icon "heart" "w-8 h-8 text-red-500" %}
+                        {% else %}
+                            {% icon "heart" "w-8 h-8 text-gray-400" %}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Medical Clearance</h4>
+                        {% if medical_status.has_clearance %}
+                            {% if medical_status.is_expired %}
+                                <p class="text-lg font-semibold text-red-600">Expired</p>
+                            {% elif medical_status.days_until_expiry and medical_status.days_until_expiry <= 30 %}
+                                <p class="text-lg font-semibold text-yellow-600">Expires in {{ medical_status.days_until_expiry }} days</p>
+                            {% else %}
+                                <p class="text-lg font-semibold text-green-600">Valid until {{ medical_status.valid_until|date:"M j, Y" }}</p>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-lg font-semibold text-gray-400">Not on file</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Agreements Card -->
+        <div class="bg-white shadow rounded-lg p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 mr-3 flex items-center justify-center">
+                        {% if pending_agreements %}
+                            {% icon "file-text" "w-8 h-8 text-yellow-500" %}
+                        {% elif signed_agreements %}
+                            {% icon "file-text" "w-8 h-8 text-green-500" %}
+                        {% else %}
+                            {% icon "file-text" "w-8 h-8 text-gray-400" %}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Agreements</h4>
+                        {% if pending_agreements %}
+                            <p class="text-lg font-semibold text-yellow-600">{{ pending_agreements|length }} pending</p>
+                        {% elif signed_agreements %}
+                            <p class="text-lg font-semibold text-green-600">All signed</p>
+                        {% else %}
+                            <p class="text-lg font-semibold text-gray-400">None</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Briefings Card -->
+        <div class="bg-white shadow rounded-lg p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 mr-3 flex items-center justify-center">
+                        {% if upcoming_briefings %}
+                            {% icon "clipboard" "w-8 h-8 text-blue-500" %}
+                        {% else %}
+                            {% icon "clipboard" "w-8 h-8 text-gray-400" %}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Briefings</h4>
+                        {% if upcoming_briefings %}
+                            <p class="text-lg font-semibold text-blue-600">{{ upcoming_briefings|length }} to review</p>
+                        {% else %}
+                            <p class="text-sm text-gray-400">Dive briefings will appear here</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Required Documents Alert (templates needing new forms OR pending agreements needing signature) -->
+    {% if agreement_status.required or pending_agreements or preference_status.needs_intake_survey %}
+    <div class="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 animate-undulate">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                {% icon "alert-triangle" "w-5 h-5 text-yellow-600" %}
+            </div>
+            <div class="ml-3 flex-1">
+                <h3 class="text-sm font-medium text-yellow-800">Action Required</h3>
+                <p class="mt-1 text-sm text-yellow-700">
+                    Please complete the following before your next dive:
+                </p>
+                <ul class="mt-3 space-y-2">
+                    {% if preference_status.needs_intake_survey %}
+                    <li class="flex items-center justify-between py-2 px-3 bg-white rounded-md border border-yellow-200">
+                        <div class="flex items-center">
+                            {% icon "clipboard-document-list" "w-4 h-4 text-primary-500 mr-2" %}
+                            <div>
+                                <span class="font-medium text-gray-800">Preferences Survey</span>
+                                <span class="ml-2 text-xs text-gray-500">{{ preference_status.completion_percent }}% complete</span>
+                            </div>
+                        </div>
+                        <a href="{% url 'portal:preferences_survey' %}"
+                           class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-600 text-white hover:bg-primary-700 shadow-sm">
+                            {% icon "arrow-right" "w-3 h-3 mr-1" %}
+                            Complete Now
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% for item in agreement_status.required %}
+                    <li class="flex items-center justify-between py-2 px-3 bg-white rounded-md border border-yellow-200">
+                        <div class="flex items-center">
+                            {% if item.template.template_type == 'medical_questionnaire' %}
+                                {% icon "heart" "w-4 h-4 text-red-500 mr-2" %}
+                            {% elif item.template.template_type == 'waiver' %}
+                                {% icon "file-text" "w-4 h-4 text-blue-500 mr-2" %}
+                            {% else %}
+                                {% icon "file" "w-4 h-4 text-gray-500 mr-2" %}
+                            {% endif %}
+                            <div>
+                                <span class="font-medium text-gray-800">{{ item.template.name }}</span>
+                                <span class="ml-2 text-xs text-gray-500">{{ item.template.get_template_type_display }}</span>
+                            </div>
+                        </div>
+                        <a href="{% url 'portal:start_form' item.template.pk %}"
+                           target="_blank"
+                           class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-600 text-white hover:bg-primary-700 shadow-sm">
+                            {% icon "external-link" "w-3 h-3 mr-1" %}
+                            Start Now
+                        </a>
+                    </li>
+                    {% endfor %}
+                    {% for agreement in pending_agreements %}
+                    <li class="flex items-center justify-between py-2 px-3 bg-white rounded-md border border-yellow-200">
+                        <div class="flex items-center">
+                            {% if agreement.template.template_type == 'medical_questionnaire' %}
+                                {% icon "heart" "w-4 h-4 text-red-500 mr-2" %}
+                            {% elif agreement.template.template_type == 'waiver' %}
+                                {% icon "file-text" "w-4 h-4 text-blue-500 mr-2" %}
+                            {% elif agreement.template.template_type == 'briefing' %}
+                                {% icon "clipboard" "w-4 h-4 text-purple-500 mr-2" %}
+                            {% else %}
+                                {% icon "file" "w-4 h-4 text-gray-500 mr-2" %}
+                            {% endif %}
+                            <div>
+                                <span class="font-medium text-gray-800">{{ agreement.template.name }}</span>
+                                <span class="ml-2 text-xs text-gray-500">{{ agreement.template.get_template_type_display }}</span>
+                            </div>
+                        </div>
+                        {% if agreement.access_token %}
+                        <a href="{% url 'diveops_public:sign' agreement.access_token %}"
+                           target="_blank"
+                           class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-600 text-white hover:bg-primary-700 shadow-sm">
+                            {% icon "external-link" "w-3 h-3 mr-1" %}
+                            Sign Now
+                        </a>
+                        {% else %}
+                        <span class="text-xs text-gray-400">Contact staff</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Upcoming Excursions & Certifications Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Upcoming Excursions -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    {% icon "calendar" "w-5 h-5 mr-2 text-primary-500" %}
+                    Upcoming Excursions
+                </h3>
+            </div>
+            <div class="p-6">
+                {% if upcoming_bookings %}
+                    <ul class="space-y-4">
+                        {% for booking in upcoming_bookings %}
+                        <li class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+                            <div>
+                                <div class="font-medium text-gray-800">
+                                    {{ booking.excursion.dive_site.name }}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    {{ booking.excursion.departure_time|date:"l, M j" }} at {{ booking.excursion.departure_time|time:"g:i A" }}
+                                </div>
+                            </div>
+                            <span class="px-2 py-1 text-xs rounded-full {% if booking.status == 'confirmed' %}bg-green-100 text-green-700{% elif booking.status == 'checked_in' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-600{% endif %}">
+                                {{ booking.status|title }}
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-500 text-sm">No upcoming excursions scheduled.</p>
+                    <p class="text-sm mt-2">
+                        <a href="{% url 'store:list' %}" class="text-primary-600 hover:text-primary-700 hover:underline">
+                            Click here to explore and schedule your next excursion!
+                        </a>
+                    </p>
+
+                    {% if recommended_excursions or recommended_types %}
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Recommended for you</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {% if recommended_excursions %}
+                                {% for excursion in recommended_excursions %}
+                                <a href="{% url 'store:list' %}" class="block group">
+                                    <div class="bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition">
+                                        {% if excursion.dive_site.profile_photo %}
+                                        <div class="h-24 overflow-hidden">
+                                            <img src="{{ excursion.dive_site.profile_photo.file.url }}"
+                                                 alt="{{ excursion.dive_site.name }}"
+                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                                        </div>
+                                        {% else %}
+                                        <div class="h-24 bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                                            {% icon "anchor" "w-8 h-8 text-white/50" %}
+                                        </div>
+                                        {% endif %}
+                                        <div class="p-3">
+                                            <h4 class="font-medium text-gray-800 text-sm truncate">
+                                                {{ excursion.dive_site.name|default:"Dive Excursion" }}
+                                            </h4>
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                {{ excursion.departure_time|date:"D, M j" }} &bull; {{ excursion.spots_available }} spots
+                                            </p>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            {% else %}
+                                {% for etype in recommended_types %}
+                                <a href="{% url 'store:list' %}" class="block group">
+                                    <div class="bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition">
+                                        <div class="h-24 flex items-center justify-center
+                                            {% if etype.dive_mode == 'boat' %}bg-gradient-to-br from-blue-400 to-blue-600
+                                            {% elif etype.dive_mode == 'cenote' %}bg-gradient-to-br from-teal-400 to-teal-600
+                                            {% elif etype.dive_mode == 'cavern' %}bg-gradient-to-br from-slate-500 to-slate-700
+                                            {% else %}bg-gradient-to-br from-cyan-400 to-cyan-600{% endif %}">
+                                            {% if etype.dive_mode == 'boat' %}
+                                                {% icon "anchor" "w-8 h-8 text-white/50" %}
+                                            {% elif etype.dive_mode == 'cenote' %}
+                                                {% icon "droplet" "w-8 h-8 text-white/50" %}
+                                            {% elif etype.dive_mode == 'cavern' %}
+                                                {% icon "mountain" "w-8 h-8 text-white/50" %}
+                                            {% else %}
+                                                {% icon "compass" "w-8 h-8 text-white/50" %}
+                                            {% endif %}
+                                        </div>
+                                        <div class="p-3">
+                                            <h4 class="font-medium text-gray-800 text-sm truncate">{{ etype.name }}</h4>
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                {{ etype.get_dive_mode_display }} &bull; ${{ etype.base_price }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- My Certifications -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    {% icon "award" "w-5 h-5 mr-2 text-primary-500" %}
+                    My Certifications
+                </h3>
+            </div>
+            <div class="p-6">
+                {% if diver.certifications.all %}
+                    <ul class="space-y-3">
+                        {% for cert in diver.certifications.all %}
+                        <li class="flex items-center p-3 bg-gray-50 rounded-lg">
+                            <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                {% icon "award" "w-5 h-5 text-blue-600" %}
+                            </div>
+                            <div class="ml-3">
+                                <div class="font-medium text-gray-800">{{ cert.level.name }}</div>
+                                <div class="text-xs text-gray-500">
+                                    {{ cert.level.agency.name }} &middot; {{ cert.issued_on|date:"M Y" }}
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-500 text-sm">No certifications on file.</p>
+                {% endif %}
+
+                {% if recommended_certifications %}
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Recommended Next Steps</p>
+                    <ul class="space-y-2">
+                        {% for rec in recommended_certifications %}
+                        <li class="flex items-start p-3 bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg border border-primary-100">
+                            <div class="flex-shrink-0 w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                                {% icon "trending-up" "w-4 h-4 text-primary-600" %}
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <div class="font-medium text-gray-800">{{ rec.level.name }}</div>
+                                <div class="text-xs text-gray-600 mt-0.5">{{ rec.reason }}</div>
+                                {% if rec.level.agency %}
+                                <div class="text-xs text-gray-400 mt-1">{{ rec.level.agency.name }}</div>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Gear Sizing & Buddies Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gear Sizing -->
+        <div class="bg-white shadow rounded-lg" x-data="{ showGearModal: false }">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    {% icon "sliders" "w-5 h-5 mr-2 text-primary-500" %}
+                    My Gear Sizing
+                </h3>
+                <button @click="showGearModal = true"
+                        class="text-sm text-primary-600 hover:text-primary-800">
+                    {% icon "edit" "w-4 h-4 inline mr-1" %}Edit
+                </button>
+            </div>
+        </div>
+
+        <!-- Gear Sizing Modal -->
+        <div x-show="showGearModal" x-cloak
+             class="fixed inset-0 z-50 overflow-y-auto"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75" @click="showGearModal = false"></div>
+                <div class="relative bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                    <form method="post" action="{% url 'portal:update_gear_sizing' %}">
+                        {% csrf_token %}
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Edit Gear Sizing</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                                    <input type="number" name="height_cm" value="{{ diver.height_cm|default:'' }}"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                                    <input type="number" name="weight_kg" value="{{ diver.weight_kg|default:'' }}" step="0.1"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Wetsuit Size</label>
+                                    <select name="wetsuit_size" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="">--</option>
+                                        <option value="XS" {% if diver.wetsuit_size == "XS" %}selected{% endif %}>XS</option>
+                                        <option value="S" {% if diver.wetsuit_size == "S" %}selected{% endif %}>S</option>
+                                        <option value="M" {% if diver.wetsuit_size == "M" %}selected{% endif %}>M</option>
+                                        <option value="L" {% if diver.wetsuit_size == "L" %}selected{% endif %}>L</option>
+                                        <option value="XL" {% if diver.wetsuit_size == "XL" %}selected{% endif %}>XL</option>
+                                        <option value="XXL" {% if diver.wetsuit_size == "XXL" %}selected{% endif %}>XXL</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">BCD Size</label>
+                                    <select name="bcd_size" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="">--</option>
+                                        <option value="XS" {% if diver.bcd_size == "XS" %}selected{% endif %}>XS</option>
+                                        <option value="S" {% if diver.bcd_size == "S" %}selected{% endif %}>S</option>
+                                        <option value="M" {% if diver.bcd_size == "M" %}selected{% endif %}>M</option>
+                                        <option value="L" {% if diver.bcd_size == "L" %}selected{% endif %}>L</option>
+                                        <option value="XL" {% if diver.bcd_size == "XL" %}selected{% endif %}>XL</option>
+                                        <option value="XXL" {% if diver.bcd_size == "XXL" %}selected{% endif %}>XXL</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Fin Size</label>
+                                    <input type="text" name="fin_size" value="{{ diver.fin_size|default:'' }}" placeholder="e.g., M/L or 42"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Glove Size</label>
+                                    <select name="glove_size" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="">--</option>
+                                        <option value="XS" {% if diver.glove_size == "XS" %}selected{% endif %}>XS</option>
+                                        <option value="S" {% if diver.glove_size == "S" %}selected{% endif %}>S</option>
+                                        <option value="M" {% if diver.glove_size == "M" %}selected{% endif %}>M</option>
+                                        <option value="L" {% if diver.glove_size == "L" %}selected{% endif %}>L</option>
+                                        <option value="XL" {% if diver.glove_size == "XL" %}selected{% endif %}>XL</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Mask Fit</label>
+                                    <input type="text" name="mask_fit" value="{{ diver.mask_fit|default:'' }}" placeholder="e.g., low volume"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Dive Weight (kg)</label>
+                                    <input type="number" name="weight_required_kg" value="{{ diver.weight_required_kg|default:'' }}" step="0.5"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Gear Notes</label>
+                                    <textarea name="gear_notes" rows="2" placeholder="Any preferences or requirements..."
+                                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">{{ diver.gear_notes|default:'' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                            <button type="submit" class="w-full sm:w-auto inline-flex justify-center rounded-lg border border-transparent px-4 py-2 bg-primary-600 text-white font-medium hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                Save Changes
+                            </button>
+                            <button type="button" @click="showGearModal = false" class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-lg border border-gray-300 px-4 py-2 bg-white text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            {% if diver.wetsuit_size or diver.bcd_size or diver.fin_size or diver.weight_kg or diver.height_cm %}
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {% if diver.height_cm %}
+                <div class="text-center p-2 bg-gray-50 rounded-lg">
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Height</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ diver.height_cm }} cm</div>
+                </div>
+                {% endif %}
+                {% if diver.weight_kg %}
+                <div class="text-center p-2 bg-gray-50 rounded-lg">
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Weight</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ diver.weight_kg }} kg</div>
+                </div>
+                {% endif %}
+                {% if diver.wetsuit_size %}
+                <div class="text-center p-2 bg-gray-50 rounded-lg">
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Wetsuit</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ diver.wetsuit_size }}</div>
+                </div>
+                {% endif %}
+                {% if diver.bcd_size %}
+                <div class="text-center p-2 bg-gray-50 rounded-lg">
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">BCD</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ diver.bcd_size }}</div>
+                </div>
+                {% endif %}
+                {% if diver.fin_size %}
+                <div class="text-center p-2 bg-gray-50 rounded-lg">
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Fins</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ diver.fin_size }}</div>
+                </div>
+                {% endif %}
+                {% if diver.glove_size %}
+                <div class="text-center p-2 bg-gray-50 rounded-lg">
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Gloves</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ diver.glove_size }}</div>
+                </div>
+                {% endif %}
+                {% if diver.mask_fit %}
+                <div class="text-center p-2 bg-gray-50 rounded-lg">
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Mask</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ diver.mask_fit }}</div>
+                </div>
+                {% endif %}
+                {% if diver.weight_required_kg %}
+                <div class="text-center p-2 bg-gray-50 rounded-lg">
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Dive Wt</div>
+                    <div class="text-sm font-semibold text-gray-800">{{ diver.weight_required_kg }} kg</div>
+                </div>
+                {% endif %}
+            </div>
+            {% if diver.gear_notes %}
+            <div class="mt-3 p-2 bg-gray-50 rounded-lg">
+                <div class="text-xs text-gray-500 uppercase tracking-wide">Notes</div>
+                <p class="text-xs text-gray-700">{{ diver.gear_notes }}</p>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-6">
+                <div class="text-gray-300 mb-3">
+                    {% icon "sliders" "w-10 h-10 mx-auto" %}
+                </div>
+                <p class="text-gray-500 text-sm">No gear sizing on file.</p>
+                <p class="text-sm text-gray-400 mt-1">Add your measurements so we can prepare the right equipment for your dives.</p>
+                <button @click="showGearModal = true"
+                        class="mt-3 inline-flex items-center px-4 py-2 border border-primary-300 rounded-lg text-sm font-medium text-primary-700 bg-primary-50 hover:bg-primary-100">
+                    {% icon "plus" "w-4 h-4 mr-1.5" %}
+                    Add My Sizes
+                </button>
+            </div>
+            {% endif %}
+
+            <!-- Recommended Gear (inside gear sizing card) -->
+            {% if recommended_gear %}
+            <div class="mt-6 pt-4 border-t border-gray-200">
+                <h4 class="text-sm font-medium text-gray-700 mb-3">Recommended Gear</h4>
+                <div class="grid grid-cols-3 gap-3">
+                    {% for rec in recommended_gear %}
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                        <div class="h-20 flex items-center justify-center {% if 'Mask' in rec.item.display_name %}bg-gradient-to-br from-blue-100 to-cyan-100{% elif 'Snorkel' in rec.item.display_name %}bg-gradient-to-br from-teal-100 to-green-100{% elif 'Fins' in rec.item.display_name or 'Fin' in rec.item.display_name %}bg-gradient-to-br from-indigo-100 to-purple-100{% elif 'Light' in rec.item.display_name %}bg-gradient-to-br from-yellow-100 to-amber-100{% elif 'Camera' in rec.item.display_name %}bg-gradient-to-br from-pink-100 to-rose-100{% elif 'Computer' in rec.item.display_name %}bg-gradient-to-br from-gray-100 to-slate-200{% else %}bg-gradient-to-br from-amber-50 to-orange-100{% endif %}">
+                            {% if 'Mask' in rec.item.display_name %}
+                                {% icon "eye" "w-8 h-8 text-blue-500" %}
+                            {% elif 'Snorkel' in rec.item.display_name %}
+                                {% icon "wind" "w-8 h-8 text-teal-500" %}
+                            {% elif 'Fins' in rec.item.display_name or 'Fin' in rec.item.display_name %}
+                                {% icon "zap" "w-8 h-8 text-indigo-500" %}
+                            {% elif 'Light' in rec.item.display_name %}
+                                {% icon "sun" "w-8 h-8 text-amber-500" %}
+                            {% elif 'Camera' in rec.item.display_name %}
+                                {% icon "camera" "w-8 h-8 text-pink-500" %}
+                            {% elif 'Computer' in rec.item.display_name %}
+                                {% icon "cpu" "w-8 h-8 text-slate-500" %}
+                            {% else %}
+                                {% icon "package" "w-8 h-8 text-amber-500" %}
+                            {% endif %}
+                        </div>
+                        <div class="p-2 text-center">
+                            <div class="font-medium text-gray-800 text-xs truncate">{{ rec.item.display_name }}</div>
+                            {% if rec.price %}
+                            <div class="text-sm font-bold text-primary-600">${{ rec.price }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <a href="{% url 'store:list' %}" class="mt-3 inline-flex items-center text-primary-600 hover:text-primary-800 text-xs">
+                    Browse all gear
+                    {% icon "arrow-right" "w-3 h-3 ml-1" %}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        </div>
+
+        <!-- Buddies -->
+        <div class="bg-white shadow rounded-lg">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    {% icon "users" "w-5 h-5 mr-2 text-primary-500" %}
+                    Buddies
+                </h3>
+                <a href="{% url 'portal:add_buddy' %}"
+                   class="text-sm text-primary-600 hover:text-primary-800">
+                    {% icon "plus" "w-4 h-4 inline mr-1" %}Add
+                </a>
+            </div>
+        </div>
+
+        <div class="p-6">
+            {% if buddy_pairs or buddy_groups %}
+            <div class="space-y-3">
+                {% for pair in buddy_pairs %}
+                <div class="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                    <div class="flex items-center">
+                        {% icon "user" "w-5 h-5 mr-2 text-primary-500" %}
+                        <span class="font-medium text-gray-800">{{ pair.buddy_name }}</span>
+                        {% if pair.is_registered %}
+                        <span class="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">On platform</span>
+                        {% else %}
+                        <span class="ml-2 px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">Not joined</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% for group in buddy_groups %}
+                <div class="p-3 bg-blue-50 rounded-lg">
+                    <div class="flex items-center">
+                        {% icon "users" "w-5 h-5 mr-2 text-blue-500" %}
+                        <span class="font-medium text-gray-800">{{ group.name|default:"Buddy Group" }}</span>
+                        <span class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">{{ group.member_count }} members</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-6">
+                <div class="text-gray-300 mb-3">
+                    {% icon "users" "w-10 h-10 mx-auto" %}
+                </div>
+                <p class="text-gray-500 text-sm">No dive buddies added yet.</p>
+                <p class="text-sm text-gray-400 mt-1">Add friends you like to dive with.</p>
+                <button @click="showContactModal = true"
+                        class="mt-3 inline-flex items-center px-4 py-2 border border-primary-300 rounded-lg text-sm font-medium text-primary-700 bg-primary-50 hover:bg-primary-100">
+                    {% icon "plus" "w-4 h-4 mr-1.5" %}
+                    Add Buddy
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        </div>
+    </div>
+
+    <!-- Recent Dive History -->
+    {% if past_bookings %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                {% icon "clock" "w-5 h-5 mr-2 text-primary-500" %}
+                Recent Dives
+            </h3>
+        </div>
+        <div class="p-6">
+            <ul class="space-y-3">
+                {% for booking in past_bookings %}
+                <li class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <div>
+                        <span class="font-medium text-gray-800">{{ booking.excursion.dive_site.name }}</span>
+                        <span class="text-sm text-gray-500 ml-2">{{ booking.excursion.departure_time|date:"M j, Y" }}</span>
+                    </div>
+                    <span class="text-sm text-gray-500">
+                        {% if booking.status == 'completed' %}
+                            {% icon "check-circle" "w-4 h-4 text-green-500" %}
+                        {% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- My Courseware -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    {% icon "book-open" "w-5 h-5 mr-2 text-primary-500" %}
+                    My Courseware
+                </h3>
+            </div>
+            <div class="p-6">
+                {% if courseware_pages %}
+                    <ul class="space-y-3">
+                        {% for page in courseware_pages %}
+                        <li>
+                            <a href="{% url 'portal:content' page.slug %}" class="flex items-center text-primary-600 hover:text-primary-800">
+                                {% icon "file-text" "w-4 h-4 mr-2" %}
+                                {{ page.title }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-500 text-sm">No courseware available yet.</p>
+                {% endif %}
+
+                {% if recommended_courseware %}
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Recommended Courses</p>
+                    <ul class="space-y-2">
+                        {% for rec in recommended_courseware %}
+                        <li class="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
+                            <div class="flex items-center flex-1 min-w-0">
+                                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    {% icon "book-open" "w-4 h-4 text-green-600" %}
+                                </div>
+                                <div class="ml-3 min-w-0">
+                                    <div class="font-medium text-gray-800 text-sm truncate">{{ rec.item.display_name }}</div>
+                                    <div class="text-xs text-gray-600">{{ rec.reason }}</div>
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0 ml-3 text-right">
+                                {% if rec.price %}
+                                <div class="text-sm font-semibold text-green-700">${{ rec.price }}</div>
+                                {% endif %}
+                                <a href="{% url 'store:list' %}" class="text-xs text-green-600 hover:text-green-800">View</a>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% elif not courseware_pages %}
+                    <a href="{% url 'store:list' %}" class="mt-3 inline-flex items-center text-primary-600 hover:text-primary-800 text-sm">
+                        {% icon "shopping-cart" "w-4 h-4 mr-1" %}
+                        Browse our courses
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    {% icon "receipt" "w-5 h-5 mr-2 text-primary-500" %}
+                    Recent Orders
+                </h3>
+            </div>
+            <div class="p-6">
+                {% if orders %}
+                    <ul class="space-y-3">
+                        {% for order in orders %}
+                        <li class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                            <div>
+                                <a href="{% url 'portal:order_detail' order.order_number %}" class="font-medium text-primary-600 hover:text-primary-800">{{ order.order_number }}</a>
+                                <span class="text-sm text-gray-500 ml-2">{{ order.created_at|date:"M j, Y" }}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-gray-700">${{ order.total_amount }}</span>
+                                <span class="ml-2 px-2 py-1 text-xs rounded-full {% if order.status == 'fulfilled' %}bg-green-100 text-green-700{% elif order.status == 'paid' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ order.status|title }}
+                                </span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <a href="{% url 'portal:orders' %}" class="mt-4 inline-flex items-center text-primary-600 hover:text-primary-800 text-sm">
+                        View all orders
+                        {% icon "arrow-right" "w-4 h-4 ml-1" %}
+                    </a>
+                {% else %}
+                    <p class="text-gray-500 text-sm">No orders yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Entitlements -->
+    {% if entitlements %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                {% icon "key" "w-5 h-5 mr-2 text-primary-500" %}
+                My Access
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="flex flex-wrap gap-2">
+                {% for code in entitlements %}
+                <span class="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
+                    {{ code }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if diver %}
+    <!-- Briefings, Agreements, and Dive Logs Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Briefings -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    {% icon "clipboard" "w-5 h-5 mr-2 text-primary-500" %}
+                    Briefings
+                </h3>
+            </div>
+            <div class="p-6">
+                {% if briefings %}
+                    <ul class="space-y-3">
+                        {% for agreement in briefings %}
+                        <li class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                            <div>
+                                <span class="font-medium text-gray-800">{{ agreement.template.name }}</span>
+                                <span class="text-xs text-gray-500 ml-2">{{ agreement.signed_at|date:"M j, Y" }}</span>
+                            </div>
+                            {% if agreement.signed_document %}
+                            <a href="{{ agreement.signed_document.file.url }}" target="_blank" class="text-primary-600 hover:text-primary-800">
+                                {% icon "download" "w-4 h-4" %}
+                            </a>
+                            {% else %}
+                            {% icon "check-circle" "w-4 h-4 text-green-500" %}
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-500 text-sm">No briefings signed yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- My Documents & Agreements -->
+        <div class="bg-white shadow rounded-lg" x-data="{ expanded: false }">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                        {% icon "folder" "w-5 h-5 mr-2 text-primary-500" %}
+                        My Documents & Agreements
+                    </h3>
+                    {% if combined_docs|length > 4 %}
+                    <button @click="expanded = !expanded" class="text-sm text-primary-600 hover:text-primary-800">
+                        <span x-show="!expanded">View all ({{ combined_docs|length }})</span>
+                        <span x-show="expanded" x-cloak>Show less</span>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="p-6">
+                {% if combined_docs %}
+                    <ul class="space-y-3">
+                        {% for entry in combined_docs %}
+                        <li class="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
+                            {% if forloop.counter > 4 %}x-show="expanded" x-cloak x-transition{% endif %}>
+                            {% if entry.type == 'document' %}
+                            <div class="flex items-center">
+                                {% if entry.item.document_type == 'signed_medical_questionnaire' %}
+                                    {% icon "heart" "w-5 h-5 text-red-500 mr-3" %}
+                                {% elif entry.item.document_type == 'physician_clearance' %}
+                                    {% icon "clipboard-check" "w-5 h-5 text-green-500 mr-3" %}
+                                {% elif entry.item.document_type == 'photo_id' %}
+                                    {% icon "user" "w-5 h-5 text-blue-500 mr-3" %}
+                                {% else %}
+                                    {% icon "file" "w-5 h-5 text-gray-500 mr-3" %}
+                                {% endif %}
+                                <div>
+                                    <span class="font-medium text-gray-800">{{ entry.item.name|default:entry.item.document_type|title }}</span>
+                                    <div class="text-xs text-gray-500">
+                                        {% if entry.item.document_type %}
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-600 mr-1">
+                                            {{ entry.item.document_type|title }}
+                                        </span>
+                                        {% endif %}
+                                        {{ entry.date|date:"M j, Y" }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if entry.item.file %}
+                            <a href="{{ entry.item.file.url }}" target="_blank" class="text-primary-600 hover:text-primary-800" title="Download">
+                                {% icon "download" "w-4 h-4" %}
+                            </a>
+                            {% endif %}
+                            {% else %}
+                            <div class="flex items-center">
+                                {% icon "file-check" "w-5 h-5 text-blue-500 mr-3" %}
+                                <div>
+                                    <span class="font-medium text-gray-800">{{ entry.item.template.name }}</span>
+                                    <div class="text-xs text-gray-500">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-600 mr-1">
+                                            {{ entry.item.template.get_template_type_display }}
+                                        </span>
+                                        {{ entry.date|date:"M j, Y" }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if entry.item.signed_document %}
+                            <a href="{{ entry.item.signed_document.file.url }}" target="_blank" class="text-primary-600 hover:text-primary-800" title="Download PDF">
+                                {% icon "download" "w-4 h-4" %}
+                            </a>
+                            {% else %}
+                            {% icon "check-circle" "w-4 h-4 text-green-500" %}
+                            {% endif %}
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-500 text-sm">No documents or agreements on file.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Dive Logs -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    {% icon "book" "w-5 h-5 mr-2 text-primary-500" %}
+                    Dive Log
+                </h3>
+                {% if dive_stats %}
+                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                    {% if dive_stats.deepest_depth %}
+                    <span title="Deepest dive">
+                        {% icon "arrow-down" "w-4 h-4 inline" %} {{ dive_stats.deepest_depth }}m
+                    </span>
+                    {% endif %}
+                    {% if dive_stats.longest_dive %}
+                    <span title="Longest dive">
+                        {% icon "clock" "w-4 h-4 inline" %} {{ dive_stats.longest_dive }} min
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="p-6">
+            {% if dive_logs %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="pb-3">#</th>
+                                <th class="pb-3">Date</th>
+                                <th class="pb-3">Site</th>
+                                <th class="pb-3">Depth</th>
+                                <th class="pb-3">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for log in dive_logs %}
+                            <tr class="text-sm">
+                                <td class="py-2 text-gray-500">{{ log.dive.sequence|default:"-" }}</td>
+                                <td class="py-2 text-gray-800">{{ log.dive.actual_start|date:"M j, Y"|default:"-" }}</td>
+                                <td class="py-2 text-gray-800">{{ log.dive.dive_site.name|default:"Unknown" }}</td>
+                                <td class="py-2 text-gray-600">
+                                    {% if log.max_depth_meters %}{{ log.max_depth_meters }}m{% elif log.dive.max_depth_meters %}{{ log.dive.max_depth_meters }}m{% else %}-{% endif %}
+                                </td>
+                                <td class="py-2 text-gray-600">
+                                    {% if log.bottom_time_minutes %}{{ log.bottom_time_minutes }} min{% elif log.dive.bottom_time_minutes %}{{ log.dive.bottom_time_minutes }} min{% else %}-{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if dive_stats.total_logged_dives > 10 %}
+                <p class="mt-4 text-sm text-gray-500">Showing most recent 10 of {{ dive_stats.total_logged_dives }} logged dives.</p>
+                {% endif %}
+            {% else %}
+                <p class="text-gray-500 text-sm">No dives logged yet.</p>
+                <p class="text-sm text-gray-400 mt-1">Your dive logs will appear here after your dives are recorded.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Photo Gallery -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    {% icon "camera" "w-5 h-5 mr-2 text-primary-500" %}
+                    My Photos
+                </h3>
+                <div class="flex items-center gap-3">
+                    {% if photo_tags %}
+                    <span class="text-sm text-gray-500">{{ photo_tags|length }} photo{{ photo_tags|length|pluralize }}</span>
+                    {% endif %}
+                    <button type="button"
+                            class="inline-flex items-center px-3 py-1.5 border border-primary-300 rounded-lg text-sm font-medium text-primary-700 bg-primary-50 hover:bg-primary-100"
+                            onclick="alert('Photo upload coming soon!')">
+                        {% icon "upload" "w-4 h-4 mr-1.5" %}
+                        Share Photos
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            {% if photo_tags %}
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {% for tag in photo_tags %}
+                    <div class="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                        {% if tag.document.file %}
+                        <img src="{{ tag.document.file.url }}"
+                             alt="Dive photo"
+                             class="w-full h-full object-cover">
+                        <!-- Watermark overlay (placeholder for future) -->
+                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                            <div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                <a href="{{ tag.document.file.url }}"
+                                   target="_blank"
+                                   class="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"
+                                   title="View full size">
+                                    {% icon "eye" "w-5 h-5 text-gray-700" %}
+                                </a>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            {% icon "image" "w-8 h-8 text-gray-300" %}
+                        </div>
+                        {% endif %}
+                        <!-- Photo date badge -->
+                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-2">
+                            <span class="text-xs text-white">{{ tag.document.created_at|date:"M j, Y" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <p class="mt-4 text-sm text-gray-500">
+                    {% icon "info" "w-4 h-4 inline mr-1" %}
+                    Click to view. Full-resolution downloads coming soon!
+                </p>
+            {% else %}
+                <div class="text-center py-8">
+                    <div class="text-gray-300 mb-3">
+                        {% icon "camera" "w-12 h-12 mx-auto" %}
+                    </div>
+                    <p class="text-gray-500 text-sm">No photos yet.</p>
+                    <p class="text-sm text-gray-400 mt-1">Photos from your dives will appear here once they're uploaded.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

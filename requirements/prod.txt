@@ -1,0 +1,10 @@
+-r base.txt
+
+# Production WSGI server
+gunicorn>=21.0
+
+# Production monitoring
+sentry-sdk>=1.39
+
+# Performance
+uvloop>=0.19; sys_platform != 'win32'

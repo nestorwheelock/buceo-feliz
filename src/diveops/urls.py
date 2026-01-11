@@ -1,0 +1,46 @@
+"""URL configuration for DiveOps project."""
+
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path
+
+from diveops.core.views import health_check, index
+
+urlpatterns = [
+    # Health check
+    path("health/", health_check, name="health_check"),
+
+    # Django admin
+    path("admin/", admin.site.urls),
+
+    # Authentication
+    path("accounts/", include("django.contrib.auth.urls")),
+
+    # Staff portal
+    path("staff/diveops/", include("diveops.operations.urls.staff", namespace="staff")),
+
+    # Customer portal
+    path("portal/", include("diveops.operations.urls.customer", namespace="portal")),
+
+    # Public pages (agreement signing, medical questionnaire)
+    path("sign/", include("diveops.operations.urls.public", namespace="sign")),
+
+    # Store
+    path("shop/", include("diveops.store.urls", namespace="store")),
+
+    # Invoicing
+    path("invoices/", include("diveops.invoicing.urls", namespace="invoicing")),
+
+    # Homepage
+    path("", index, name="index"),
+]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+    # Django Debug Toolbar
+    if "debug_toolbar" in settings.INSTALLED_APPS:
+        import debug_toolbar
+        urlpatterns = [path("__debug__/", include(debug_toolbar.urls))] + urlpatterns

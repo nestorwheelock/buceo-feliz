@@ -1,0 +1,439 @@
+{% extends "diveops/staff/_base.html" %}
+{% load portal_ui_tags %}
+
+{% block breadcrumb %}
+<li>
+    <div class="flex items-center">
+        <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+        </svg>
+        <span class="ml-2 text-sm font-medium text-gray-500">{{ page_title }}</span>
+    </div>
+</li>
+{% endblock %}
+
+{% block staff_content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Medical Questionnaires</h1>
+            <p class="text-gray-600">Track diver medical screening status</p>
+        </div>
+        <a href="{% url 'diveops:medical-send-create' %}"
+           class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Send Questionnaire
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                <select name="status" id="status"
+                        class="mt-1 block w-40 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">All</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="expiration" class="block text-sm font-medium text-gray-700">Expiration</label>
+                <select name="expiration" id="expiration"
+                        class="mt-1 block w-40 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    {% for value, label in expiration_choices %}
+                    <option value="{{ value }}" {% if current_expiration == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="sort" class="block text-sm font-medium text-gray-700">Sort By</label>
+                <select name="sort" id="sort"
+                        class="mt-1 block w-40 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    {% for value, label in sort_choices %}
+                    <option value="{{ value }}" {% if current_sort == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit"
+                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Filter
+            </button>
+            {% if current_status or current_expiration or current_sort != '-created_at' %}
+            <a href="{% url 'diveops:medical-list' %}"
+               class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800">
+                Clear Filters
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <a href="?status=pending" class="block bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:border-blue-300 transition-colors">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 p-2 bg-blue-100 rounded-lg">
+                    <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Pending</p>
+                    <p class="text-lg font-semibold text-gray-900">View</p>
+                </div>
+            </div>
+        </a>
+        <a href="?status=flagged" class="block bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:border-red-300 transition-colors">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 p-2 bg-red-100 rounded-lg">
+                    <svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Needs Clearance</p>
+                    <p class="text-lg font-semibold text-gray-900">View</p>
+                </div>
+            </div>
+        </a>
+        <a href="?expiration=expiring_soon" class="block bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:border-yellow-300 transition-colors">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 p-2 bg-yellow-100 rounded-lg">
+                    <svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Expiring Soon</p>
+                    <p class="text-lg font-semibold text-gray-900">View</p>
+                </div>
+            </div>
+        </a>
+        <a href="?expiration=expired" class="block bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:border-gray-400 transition-colors">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 p-2 bg-gray-100 rounded-lg">
+                    <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Expired</p>
+                    <p class="text-lg font-semibold text-gray-900">View</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Questionnaire List -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        {% if instances %}
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Diver
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Expires
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Time Left
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for instance in instances %}
+                {% with respondent=instance.prefetched_respondent %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if respondent %}
+                        <a href="{% url 'diveops:diver-medical-status' pk=respondent.pk %}" class="text-blue-600 hover:text-blue-900 font-medium">
+                            {{ respondent }}
+                        </a>
+                        {% else %}
+                        <span class="text-gray-400">Unknown</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if instance.status == 'pending' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Pending
+                        </span>
+                        {% elif instance.status == 'completed' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Completed
+                        </span>
+                        {% elif instance.status == 'flagged' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Needs Clearance
+                        </span>
+                        {% elif instance.status == 'cleared' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            Cleared
+                        </span>
+                        {% elif instance.status == 'expired' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Expired
+                        </span>
+                        {% elif instance.status == 'voided' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-600">
+                            Voided
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ instance.created_at|date:"M d, Y" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ instance.expires_at|date:"M d, Y" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        {% if instance.is_expired %}
+                        <span class="text-gray-400">Expired</span>
+                        {% else %}
+                        <span class="text-gray-600">{{ instance.expires_at|timeuntil }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                        <a href="{% url 'diveops:medical-detail' pk=instance.pk %}"
+                           class="text-blue-600 hover:text-blue-900">View</a>
+                        {% if instance.status == 'flagged' %}
+                        <button type="button" onclick="openClearModal('{{ instance.pk }}', '{{ respondent }}')"
+                           class="text-orange-600 hover:text-orange-900">Clear</button>
+                        {% endif %}
+                        {% if instance.status == 'pending' %}
+                        <button type="button" onclick="copyLink('{% url 'diveops_public:medical-questionnaire' instance_id=instance.pk %}')"
+                                class="text-green-600 hover:text-green-900" title="Copy questionnaire link">
+                            Copy Link
+                        </button>
+                        {% endif %}
+                        {% if instance.status == 'completed' or instance.status == 'cleared' or instance.status == 'flagged' %}
+                        <a href="{% url 'diveops:medical-pdf-download' pk=instance.pk %}"
+                           class="text-purple-600 hover:text-purple-900" title="Download PDF">PDF</a>
+                        {% endif %}
+                        {% if instance.status == 'cleared' and instance.clearance_document %}
+                        <a href="{% url 'diveops:document-download' pk=instance.clearance_document.pk %}"
+                           class="text-teal-600 hover:text-teal-900" title="Download Clearance">Clearance</a>
+                        {% endif %}
+                        {% if instance.status != 'voided' %}
+                        <button type="button" onclick="openVoidModal('{{ instance.pk }}', '{{ respondent }}')"
+                           class="text-gray-400 hover:text-red-600" title="Void this questionnaire">Void</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endwith %}
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_expiration %}&expiration={{ current_expiration }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Previous
+                </a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_expiration %}&expiration={{ current_expiration }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+                   class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Next
+                </a>
+                {% endif %}
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing
+                        <span class="font-medium">{{ page_obj.start_index }}</span>
+                        to
+                        <span class="font-medium">{{ page_obj.end_index }}</span>
+                        of
+                        <span class="font-medium">{{ page_obj.paginator.count }}</span>
+                        results
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_expiration %}&expiration={{ current_expiration }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            Previous
+                        </a>
+                        {% endif %}
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_expiration %}&expiration={{ current_expiration }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            Next
+                        </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No questionnaires found</h3>
+            <p class="mt-1 text-sm text-gray-500">
+                {% if current_status or current_expiration %}
+                Try adjusting your filters.
+                {% else %}
+                Send a medical questionnaire to a diver to get started.
+                {% endif %}
+            </p>
+            <div class="mt-4">
+                <a href="{% url 'diveops:medical-send-create' %}"
+                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Send Questionnaire
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function copyLink(path) {
+    const url = window.location.origin + path;
+    navigator.clipboard.writeText(url).then(function() {
+        alert('Link copied to clipboard!');
+    }, function(err) {
+        prompt('Copy this link:', url);
+    });
+}
+
+function openClearModal(instanceId, diverName) {
+    document.getElementById('clearModalDiverName').textContent = diverName;
+    document.getElementById('clearForm').action = '/staff/diveops/medical/' + instanceId + '/clear/';
+    document.getElementById('clearModal').classList.remove('hidden');
+}
+
+function closeClearModal() {
+    document.getElementById('clearModal').classList.add('hidden');
+    document.getElementById('clearForm').reset();
+}
+
+function openVoidModal(instanceId, diverName) {
+    document.getElementById('voidModalDiverName').textContent = diverName;
+    document.getElementById('voidForm').action = '/staff/diveops/medical/' + instanceId + '/void/';
+    document.getElementById('voidModal').classList.remove('hidden');
+}
+
+function closeVoidModal() {
+    document.getElementById('voidModal').classList.add('hidden');
+    document.getElementById('voidForm').reset();
+}
+</script>
+
+<!-- Clear Diver Modal -->
+<div id="clearModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black bg-opacity-50" onclick="closeClearModal()"></div>
+
+        <!-- Modal -->
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="bg-yellow-500 px-4 py-3 rounded-t-lg">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    Clear Diver: <span id="clearModalDiverName"></span>
+                </h3>
+            </div>
+            <form id="clearForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="p-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Physician Statement</label>
+                        <input type="file" name="clearance_document" accept="image/*,.pdf" capture="environment"
+                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <p class="text-xs text-gray-500 mt-1">Take photo or choose file</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Note (optional)</label>
+                        <input type="text" name="notes" placeholder="Physician name, restrictions..."
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    </div>
+                </div>
+                <div class="px-4 py-3 bg-gray-50 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" onclick="closeClearModal()"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700">
+                        Clear Diver
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Void Questionnaire Modal -->
+<div id="voidModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black bg-opacity-50" onclick="closeVoidModal()"></div>
+
+        <!-- Modal -->
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="bg-gray-600 px-4 py-3 rounded-t-lg">
+                <h3 class="text-lg font-semibold text-white">
+                    Void Questionnaire: <span id="voidModalDiverName"></span>
+                </h3>
+            </div>
+            <form id="voidForm" method="post">
+                {% csrf_token %}
+                <div class="p-4 space-y-4">
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-red-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <div>
+                            <p class="text-sm text-gray-700">This will void the questionnaire. The diver's medical status will fall back to their previous questionnaire on file.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Reason (optional)</label>
+                        <textarea name="reason" rows="2" placeholder="e.g., Sent in error, duplicate entry..."
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"></textarea>
+                    </div>
+                </div>
+                <div class="px-4 py-3 bg-gray-50 rounded-b-lg flex justify-end space-x-2">
+                    <button type="button" onclick="closeVoidModal()"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">
+                        Void Questionnaire
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Agreement - {{ agreement.template.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .signature-pad {
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            touch-action: none;
+        }
+        .signature-pad.signing {
+            border-color: #3b82f6;
+        }
+        /* Screen styles - hide print-only elements */
+        .print-only {
+            display: none !important;
+        }
+        /* Print styles - only show agreement content */
+        @media print {
+            body {
+                background: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            /* Show print-only elements when printing */
+            .print-only {
+                display: block !important;
+            }
+            /* Hide no-print and form elements */
+            .no-print {
+                display: none !important;
+            }
+            /* Style the agreement content card for printing */
+            .bg-white.rounded-lg.shadow-sm {
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+            }
+            .px-6.py-4.border-b {
+                border: none !important;
+                background: white !important;
+            }
+            /* Full width for print */
+            .max-w-3xl {
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+        }
+        @page {
+            margin: 0.75in;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="max-w-3xl mx-auto py-8 px-4">
+        <!-- Header (hidden when printing) -->
+        <div class="text-center mb-8 no-print">
+            <h1 class="text-2xl font-bold text-gray-900">{{ agreement.template.name }}</h1>
+            <p class="text-gray-600 mt-1">Please review and sign this agreement</p>
+            <button type="button" onclick="window.print()"
+                    class="mt-3 inline-flex items-center px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                </svg>
+                Print to sign manually
+            </button>
+        </div>
+
+        {% if errors %}
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg no-print">
+            <div class="flex">
+                <svg class="h-5 w-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                <div>
+                    <p class="text-sm font-medium text-red-800">Please correct the following:</p>
+                    <ul class="mt-1 text-sm text-red-700 list-disc list-inside">
+                        {% for error in errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Agreement Content Card -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-lg font-medium text-gray-900">Agreement Content</h2>
+                <p class="text-sm text-gray-500 mt-1">For: {{ party_name }}</p>
+            </div>
+            <div class="px-6 py-4">
+                <div class="prose max-w-none text-gray-800">
+                    {{ agreement.content_snapshot|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Print-Only Signature Block (shown only when printing) -->
+        <div class="print-only" style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Signature</h3>
+            <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
+                <div style="flex: 1;">
+                    <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Full Legal Name (Print)</p>
+                    <div style="border-bottom: 1px solid #000; height: 2rem;"></div>
+                </div>
+                <div style="width: 10rem;">
+                    <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Date</p>
+                    <div style="border-bottom: 1px solid #000; height: 2rem;"></div>
+                </div>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Signature</p>
+                <div style="border: 1px solid #000; height: 4rem; border-radius: 0.25rem;"></div>
+            </div>
+            <div style="margin-top: 1rem; padding: 0.75rem; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.25rem;">
+                <p style="font-size: 0.75rem; color: #6b7280;">
+                    By signing above, I confirm that I have read and understand the agreement and agree to be bound by its terms.
+                </p>
+            </div>
+        </div>
+
+        <!-- Signing Form (hidden when printing) -->
+        <form method="post" id="signing-form" class="no-print">
+            {% csrf_token %}
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <h2 class="text-lg font-medium text-gray-900">Your Signature</h2>
+                </div>
+                <div class="px-6 py-6 space-y-6">
+                    <!-- Geolocation (Optional) -->
+                    <div id="geolocation-section" class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div class="flex items-start">
+                            <svg class="h-5 w-5 text-gray-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                            </svg>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-medium text-gray-800">Location Verification</h4>
+                                <p id="location-detecting" class="mt-1 text-sm text-gray-600">
+                                    <span class="inline-flex items-center">
+                                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Detecting your location...
+                                    </span>
+                                </p>
+                                <div id="location-status" class="mt-1 text-sm hidden">
+                                    <span class="text-green-600 flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <span id="location-coords"></span>
+                                    </span>
+                                </div>
+                                <div id="location-unavailable" class="mt-1 text-sm text-gray-500 hidden">
+                                    <span class="flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Location unavailable - you can still sign without it
+                                    </span>
+                                </div>
+                                <button type="button" id="enable-location-btn"
+                                        class="mt-3 px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 hidden">
+                                    Retry Location
+                                </button>
+                                <div id="location-error" class="mt-2 text-xs text-gray-500 hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div>
+                        <label for="signed_by_name" class="block text-sm font-medium text-gray-700 mb-2">
+                            Full Legal Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="signed_by_name" id="signed_by_name" required
+                               value="{{ signed_by_name|default:'' }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="Enter your full legal name">
+                        <p class="mt-1 text-xs text-gray-500">
+                            Please enter your name exactly as it appears on your ID.
+                        </p>
+                    </div>
+
+                    <!-- Signature Pad -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Signature <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <canvas id="signature-pad" class="signature-pad w-full h-40 bg-white" width="600" height="160"></canvas>
+                            <button type="button" id="clear-signature"
+                                    class="absolute top-2 right-2 px-3 py-1 text-xs text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50">
+                                Clear
+                            </button>
+                        </div>
+                        <input type="hidden" name="signature_data" id="signature-data">
+                        <!-- Digital Fingerprint Hidden Fields -->
+                        <input type="hidden" name="fp_screen_resolution" id="fp-screen-resolution">
+                        <input type="hidden" name="fp_timezone" id="fp-timezone">
+                        <input type="hidden" name="fp_timezone_offset" id="fp-timezone-offset">
+                        <input type="hidden" name="fp_language" id="fp-language">
+                        <input type="hidden" name="fp_platform" id="fp-platform">
+                        <input type="hidden" name="fp_device_memory" id="fp-device-memory">
+                        <input type="hidden" name="fp_hardware_concurrency" id="fp-hardware-concurrency">
+                        <input type="hidden" name="fp_touch_support" id="fp-touch-support">
+                        <input type="hidden" name="fp_canvas_fingerprint" id="fp-canvas-fingerprint">
+                        <input type="hidden" name="fp_geolocation" id="fp-geolocation">
+                        <p class="mt-1 text-xs text-gray-500">
+                            Use your mouse or finger to draw your signature above.
+                        </p>
+                    </div>
+
+                    <!-- E-Sign Consent -->
+                    <div class="pt-4 border-t border-gray-200 space-y-4">
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" name="read_checkbox" id="read-checkbox" required
+                                   class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <span class="ml-3 text-sm text-gray-700">
+                                I have read and understand the agreement above, and I agree to be bound by its terms.
+                            </span>
+                        </label>
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" name="esign_checkbox" id="esign-checkbox" required
+                                   class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <span class="ml-3 text-sm text-gray-700">
+                                I consent to sign this document electronically. I understand that my electronic signature
+                                has the same legal effect as a handwritten signature and that a signed copy will be
+                                available for my records.
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-center">
+                <button type="submit" id="submit-btn"
+                        class="inline-flex items-center px-8 py-3 border border-transparent rounded-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Sign Agreement
+                </button>
+            </div>
+        </form>
+
+        <!-- Footer (hidden when printing) -->
+        <div class="mt-8 text-center text-xs text-gray-500 no-print">
+            <p>This signing request was sent on {{ agreement.sent_at|date:"M d, Y" }}</p>
+            {% if agreement.expires_at %}
+            <p>This link expires on {{ agreement.expires_at|date:"M d, Y H:i" }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Digital fingerprint and signature collection
+        const canvas = document.getElementById('signature-pad');
+        const ctx = canvas.getContext('2d');
+        const signatureDataInput = document.getElementById('signature-data');
+        const clearBtn = document.getElementById('clear-signature');
+        const submitBtn = document.getElementById('submit-btn');
+        const form = document.getElementById('signing-form');
+        const enableLocationBtn = document.getElementById('enable-location-btn');
+        const locationStatus = document.getElementById('location-status');
+        const locationError = document.getElementById('location-error');
+        const geoSection = document.getElementById('geolocation-section');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let hasSignature = false;
+
+        // Location elements
+        const locationDetecting = document.getElementById('location-detecting');
+        const locationUnavailable = document.getElementById('location-unavailable');
+
+        // Collect device fingerprint on page load
+        function collectFingerprint() {
+            // Screen resolution
+            document.getElementById('fp-screen-resolution').value =
+                `${window.screen.width}x${window.screen.height}`;
+
+            // Timezone
+            try {
+                document.getElementById('fp-timezone').value =
+                    Intl.DateTimeFormat().resolvedOptions().timeZone;
+            } catch(e) {}
+
+            // Timezone offset (minutes from UTC)
+            document.getElementById('fp-timezone-offset').value =
+                new Date().getTimezoneOffset();
+
+            // Language
+            document.getElementById('fp-language').value =
+                navigator.language || navigator.userLanguage || '';
+
+            // Platform
+            document.getElementById('fp-platform').value =
+                navigator.platform || '';
+
+            // Device memory (if available)
+            if (navigator.deviceMemory) {
+                document.getElementById('fp-device-memory').value =
+                    navigator.deviceMemory + ' GB';
+            }
+
+            // Hardware concurrency (CPU cores)
+            if (navigator.hardwareConcurrency) {
+                document.getElementById('fp-hardware-concurrency').value =
+                    navigator.hardwareConcurrency;
+            }
+
+            // Touch support
+            document.getElementById('fp-touch-support').value =
+                ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+            // Canvas fingerprint (hash of canvas rendering)
+            generateCanvasFingerprint();
+        }
+
+        // Generate canvas fingerprint hash
+        async function generateCanvasFingerprint() {
+            try {
+                const fpCanvas = document.createElement('canvas');
+                fpCanvas.width = 200;
+                fpCanvas.height = 50;
+                const fpCtx = fpCanvas.getContext('2d');
+
+                // Draw unique text with various styles
+                fpCtx.textBaseline = 'top';
+                fpCtx.font = '14px Arial';
+                fpCtx.fillStyle = '#f60';
+                fpCtx.fillRect(125, 1, 62, 20);
+                fpCtx.fillStyle = '#069';
+                fpCtx.fillText('DiveOps Signature', 2, 15);
+                fpCtx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+                fpCtx.fillText('DiveOps Signature', 4, 17);
+
+                // Get data URL and hash it
+                const dataUrl = fpCanvas.toDataURL();
+                const hashBuffer = await crypto.subtle.digest('SHA-256',
+                    new TextEncoder().encode(dataUrl));
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                document.getElementById('fp-canvas-fingerprint').value = hashHex;
+            } catch(e) {
+                console.log('Canvas fingerprint not available');
+            }
+        }
+
+        // Request geolocation (non-blocking)
+        function requestGeolocation() {
+            // Check if geolocation is available
+            if (!navigator.geolocation) {
+                showLocationUnavailable('Geolocation not supported by browser');
+                return;
+            }
+
+            // Check for secure context (HTTPS required for geolocation on most mobile browsers)
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                showLocationUnavailable('HTTPS required for location on mobile (HTTP detected)');
+                return;
+            }
+
+            // Show detecting state
+            locationDetecting.classList.remove('hidden');
+            locationUnavailable.classList.add('hidden');
+            locationStatus.classList.add('hidden');
+            enableLocationBtn.classList.add('hidden');
+            locationError.classList.add('hidden');
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    // Success
+                    const geoData = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: position.timestamp
+                    };
+                    document.getElementById('fp-geolocation').value = JSON.stringify(geoData);
+
+                    // Update UI - show success
+                    locationDetecting.classList.add('hidden');
+                    locationStatus.classList.remove('hidden');
+                    document.getElementById('location-coords').textContent =
+                        `Location captured (${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)})`;
+                    geoSection.classList.remove('bg-gray-50', 'border-gray-200');
+                    geoSection.classList.add('bg-green-50', 'border-green-200');
+                },
+                function(error) {
+                    // Error - but don't block signing
+                    let reason = '';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            reason = 'Permission denied';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            reason = 'Position unavailable';
+                            break;
+                        case error.TIMEOUT:
+                            reason = 'Request timed out';
+                            break;
+                        default:
+                            reason = 'Unknown error';
+                    }
+                    showLocationUnavailable(reason);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,  // 15 seconds for mobile GPS
+                    maximumAge: 60000  // Accept cached position up to 1 minute old
+                }
+            );
+        }
+
+        function showLocationUnavailable(reason) {
+            locationDetecting.classList.add('hidden');
+            locationUnavailable.classList.remove('hidden');
+            locationStatus.classList.add('hidden');
+            enableLocationBtn.classList.remove('hidden');
+            if (reason) {
+                locationError.textContent = reason;
+                locationError.classList.remove('hidden');
+            }
+        }
+
+        // Initialize fingerprint collection
+        collectFingerprint();
+
+        // Auto-request geolocation on page load (non-blocking)
+        requestGeolocation();
+
+        // Location button click (retry)
+        enableLocationBtn.addEventListener('click', requestGeolocation);
+
+        // Set canvas size
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+        resizeCanvas();
+
+        function getPosition(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            }
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            canvas.classList.add('signing');
+            const pos = getPosition(e);
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const pos = getPosition(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            lastX = pos.x;
+            lastY = pos.y;
+            hasSignature = true;
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            canvas.classList.remove('signing');
+            if (hasSignature) {
+                signatureDataInput.value = canvas.toDataURL('image/png');
+            }
+        }
+
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch events
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        // Clear button
+        clearBtn.addEventListener('click', function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            signatureDataInput.value = '';
+            hasSignature = false;
+        });
+
+        // Form validation
+        form.addEventListener('submit', function(e) {
+            // Check signature (required)
+            if (!hasSignature) {
+                e.preventDefault();
+                alert('Please provide your signature before submitting.');
+                return false;
+            }
+
+            // Location is optional - just captured if available
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Signing...';
+        });
+
+        // Resize handler
+        window.addEventListener('resize', resizeCanvas);
+    </script>
+</body>
+</html>

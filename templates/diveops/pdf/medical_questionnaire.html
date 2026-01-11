@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ definition.name }} - {{ respondent_name }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 0.5in 0.6in;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 3px solid #b8860b;
+        }
+        .header-brand {
+            color: #b8860b;
+            font-size: 14pt;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .header h1 {
+            font-size: 16pt;
+            margin: 5px 0;
+            color: #333;
+        }
+        .header p {
+            margin: 3px 0;
+            color: #666;
+            font-size: 9pt;
+        }
+        .participant-box {
+            background: #e8f4fc;
+            border: 1px solid #b8d4e8;
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+        }
+        .participant-box .label {
+            font-weight: bold;
+            color: #2c5282;
+        }
+        .directions-box {
+            background: #fef9e7;
+            border: 1px solid #f0d78c;
+            border-radius: 5px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+        }
+        .directions-box h3 {
+            margin: 0 0 8px 0;
+            font-size: 11pt;
+            color: #8b6914;
+        }
+        .directions-box p {
+            margin: 5px 0;
+            font-size: 9pt;
+            color: #6b5a14;
+        }
+        .directions-box .note {
+            color: #c53030;
+            font-weight: bold;
+        }
+        .section {
+            margin-bottom: 15px;
+        }
+        .section-header {
+            background: #f7f7f7;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            padding: 8px 12px;
+        }
+        .section-header h2 {
+            margin: 0;
+            font-size: 12pt;
+            color: #333;
+        }
+        .section-header p {
+            margin: 3px 0 0 0;
+            font-size: 9pt;
+            color: #666;
+        }
+        .section-content {
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .question-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+            page-break-inside: avoid;
+        }
+        .question-row:last-child {
+            border-bottom: none;
+        }
+        .question-row.flagged {
+            background: #fff5f5;
+        }
+        .question-text {
+            flex: 1;
+            padding-right: 15px;
+            font-size: 9.5pt;
+        }
+        .question-number {
+            font-weight: bold;
+            color: #555;
+        }
+        .answer-box {
+            display: flex;
+            align-items: center;
+            min-width: 90px;
+            justify-content: flex-end;
+        }
+        .answer-option {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 12px;
+            font-size: 9pt;
+        }
+        .radio-circle {
+            width: 12px;
+            height: 12px;
+            border: 2px solid #666;
+            border-radius: 50%;
+            margin-right: 4px;
+            display: inline-block;
+        }
+        .radio-circle.selected {
+            background: #3182ce;
+            border-color: #3182ce;
+        }
+        .radio-circle.selected-yes {
+            background: #3182ce;
+            border-color: #3182ce;
+        }
+        .radio-circle.selected-no {
+            background: #38a169;
+            border-color: #38a169;
+        }
+        .follow-up-box {
+            margin: 10px 12px;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .follow-up-box h4 {
+            margin: 0 0 8px 0;
+            font-size: 10pt;
+            color: #444;
+            font-weight: bold;
+        }
+        .follow-up-question {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 5px 0;
+            font-size: 9pt;
+        }
+        .follow-up-question .question-text {
+            font-size: 9pt;
+        }
+        .certification-box {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+        .certification-box p {
+            margin: 0;
+        }
+        .signature-section {
+            margin-top: 15px;
+            page-break-inside: avoid;
+        }
+        .signature-section h2 {
+            font-size: 12pt;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .signature-grid {
+            display: flex;
+            gap: 20px;
+        }
+        .signature-info {
+            flex: 1;
+        }
+        .signature-info p {
+            margin: 4px 0;
+            font-size: 9pt;
+        }
+        .signature-image-box {
+            flex: 1;
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            min-height: 80px;
+        }
+        .signature-image {
+            max-width: 200px;
+            max-height: 60px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 9pt;
+            font-weight: bold;
+        }
+        .status-completed {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        .status-flagged {
+            background: #fed7d7;
+            color: #822727;
+        }
+        .status-cleared {
+            background: #bee3f8;
+            color: #2a4365;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 8pt;
+            color: #888;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+        .verification-section {
+            margin-top: 15px;
+            font-size: 8pt;
+            color: #666;
+            background: #f5f5f5;
+            padding: 8px 10px;
+            border-radius: 3px;
+        }
+        .verification-section h4 {
+            margin: 0 0 5px 0;
+            font-size: 8pt;
+            color: #555;
+        }
+        .hash-code {
+            font-family: monospace;
+            font-size: 7pt;
+            word-break: break-all;
+            background: #eee;
+            padding: 5px;
+            margin-top: 5px;
+        }
+        .requires-physician {
+            color: #c53030;
+            font-size: 8pt;
+            font-weight: bold;
+        }
+
+        /* Physician Clearance Form Styles */
+        .physician-form {
+            page-break-inside: avoid;
+        }
+        .physician-instructions {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 5px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+        }
+        .physician-instructions h3 {
+            margin: 0 0 8px 0;
+            font-size: 11pt;
+            color: #1565c0;
+        }
+        .physician-instructions p {
+            margin: 5px 0;
+            font-size: 9pt;
+            color: #333;
+        }
+        .form-section {
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+        .form-section h3 {
+            font-size: 11pt;
+            color: #333;
+            border-bottom: 2px solid #b8860b;
+            padding-bottom: 5px;
+            margin: 0 0 10px 0;
+        }
+        .section-note {
+            font-size: 9pt;
+            color: #666;
+            margin: 0 0 8px 0;
+        }
+        .patient-info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+        .patient-info-table td {
+            padding: 5px 8px;
+            border: 1px solid #ddd;
+        }
+        .patient-info-table .label-cell {
+            background: #f5f5f5;
+            font-weight: bold;
+            width: 20%;
+        }
+        .patient-info-table .value-cell {
+            width: 30%;
+        }
+        .flagged-conditions {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .flagged-item {
+            font-size: 9pt;
+            padding: 5px 0;
+            border-bottom: 1px dotted #fecaca;
+        }
+        .flagged-item:last-child {
+            border-bottom: none;
+        }
+        .flagged-item.sub-item {
+            padding-left: 20px;
+            color: #555;
+        }
+        .flagged-number {
+            font-weight: bold;
+            color: #c53030;
+            margin-right: 5px;
+        }
+        .write-line {
+            border-bottom: 1px solid #333;
+            min-height: 20px;
+            display: block;
+            margin: 5px 0;
+        }
+        .write-line.inline {
+            display: inline-block;
+            min-width: 200px;
+            vertical-align: bottom;
+        }
+        .write-area {
+            border: 1px solid #ccc;
+            min-height: 80px;
+            margin: 10px 0;
+            background: #fafafa;
+        }
+        .clearance-options {
+            margin-top: 10px;
+        }
+        .clearance-option {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .checkbox-box {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #333;
+            margin-right: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .option-content {
+            flex: 1;
+        }
+        .option-content strong {
+            font-size: 10pt;
+            color: #333;
+        }
+        .option-content p {
+            margin: 3px 0;
+            font-size: 8.5pt;
+            color: #555;
+        }
+        .restriction-lines {
+            margin-top: 8px;
+        }
+        .physician-signature-section {
+            margin-top: 20px;
+        }
+        .attestation-text {
+            font-size: 9pt;
+            font-style: italic;
+            color: #444;
+            margin-bottom: 15px;
+        }
+        .signature-grid {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 20px;
+        }
+        .signature-col {
+            flex: 1;
+        }
+        .signature-line {
+            border-bottom: 1px solid #333;
+            height: 40px;
+        }
+        .signature-label {
+            font-size: 8pt;
+            color: #666;
+            margin-top: 3px;
+        }
+        .physician-details-grid {
+            margin-top: 15px;
+        }
+        .detail-row {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 8px;
+            font-size: 9pt;
+        }
+        .detail-label {
+            width: 140px;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+        .flex-line {
+            flex: 1;
+            border-bottom: 1px solid #333;
+            min-height: 18px;
+        }
+        .stamp-area {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f5f5f5;
+            border: 1px dashed #ccc;
+        }
+        .stamp-area p {
+            font-size: 8pt;
+            color: #666;
+            margin: 0 0 5px 0;
+        }
+        .stamp-box {
+            width: 150px;
+            height: 80px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+        .physician-footer {
+            margin-top: 20px;
+        }
+        .physician-footer a {
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-brand">RSTC</div>
+        <h1>{{ definition.name }}</h1>
+        <p>{{ definition.description }}</p>
+    </div>
+
+    <!-- Participant Info -->
+    <div class="participant-box">
+        <span class="label">Participant:</span> {{ respondent_name }}
+    </div>
+
+    <!-- Directions -->
+    <div class="directions-box">
+        <h3>Directions</h3>
+        <p>{{ definition_metadata.instructions|default:"If you answered NO to all 10 questions, a medical evaluation is not required. If you answered YES to any question, you must complete the follow-up questions and may require physician evaluation." }}</p>
+        {% if definition_metadata.note_to_women %}
+        <p class="note">Note to women: {{ definition_metadata.note_to_women }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Initial Screening Questions -->
+    <div class="section">
+        <div class="section-header">
+            <h2>Initial Screening Questions</h2>
+            <p>Please answer each question honestly.</p>
+        </div>
+        <div class="section-content">
+            {% for item in screening_questions %}
+            <div class="question-row {% if item.is_flagged %}flagged{% endif %}">
+                <div class="question-text">
+                    <span class="question-number">{{ item.question.sequence }}.</span>
+                    {{ item.question.question_text }}
+                    {% if item.question.validation_rules.requires_physician %}
+                    <span class="requires-physician">*Requires physician evaluation if Yes</span>
+                    {% endif %}
+                </div>
+                <div class="answer-box">
+                    <span class="answer-option">
+                        <span class="radio-circle {% if item.answer_bool == True %}selected-yes{% endif %}"></span>
+                        Yes
+                    </span>
+                    <span class="answer-option">
+                        <span class="radio-circle {% if item.answer_bool == False %}selected-no{% endif %}"></span>
+                        No
+                    </span>
+                </div>
+            </div>
+
+            <!-- Follow-up box if this question has one and it was answered Yes -->
+            {% for box in follow_up_boxes %}
+            {% if box.parent_sequence == item.question.sequence and box.visible %}
+            <div class="follow-up-box">
+                <h4>{{ box.title }}</h4>
+                {% for fq in box.questions %}
+                <div class="follow-up-question">
+                    <div class="question-text">{{ fq.question.question_text }}</div>
+                    <div class="answer-box">
+                        <span class="answer-option">
+                            <span class="radio-circle {% if fq.answer_bool == True %}selected-yes{% endif %}"></span>
+                            Yes
+                        </span>
+                        <span class="answer-option">
+                            <span class="radio-circle {% if fq.answer_bool == False %}selected-no{% endif %}"></span>
+                            No
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Certification -->
+    <div class="certification-box">
+        <p><strong>Participant Statement:</strong> I have answered all questions honestly, and understand that I accept responsibility for any consequences resulting from any questions I may have answered inaccurately or for my failure to disclose any existing or past health conditions.</p>
+    </div>
+
+    <!-- Status -->
+    <div style="margin-bottom: 15px;">
+        <strong>Medical Status:</strong>
+        {% if status == 'completed' %}
+        <span class="status-badge status-completed">CLEARED - No Physician Evaluation Required</span>
+        {% elif status == 'flagged' %}
+        <span class="status-badge status-flagged">REQUIRES PHYSICIAN CLEARANCE</span>
+        {% elif status == 'cleared' %}
+        <span class="status-badge status-cleared">CLEARED - Physician Clearance Received</span>
+        {% else %}
+        <span class="status-badge">{{ status|title }}</span>
+        {% endif %}
+    </div>
+
+    <!-- Signature Section -->
+    <div class="signature-section">
+        <h2>Electronic Signature</h2>
+        <div class="signature-grid">
+            <div class="signature-info">
+                <p><strong>Signed by:</strong> {{ signed_by_name }}</p>
+                <p><strong>Date:</strong> {{ signed_at }}</p>
+                <p><strong>IP Address:</strong> {{ ip_address }}</p>
+                <p><strong>Valid Until:</strong> {{ expires_at|date:"F j, Y" }}</p>
+            </div>
+            <div class="signature-image-box">
+                {% if signature_image %}
+                <img src="{{ signature_image }}" class="signature-image" alt="Signature">
+                {% else %}
+                <p style="color: #999; font-size: 9pt;">Signature on file</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Verification Data -->
+    <div class="verification-section">
+        <h4>Digital Signature Verification Data</h4>
+
+        <!-- Device Information -->
+        <div style="margin-bottom: 8px;">
+            <strong>Device Information:</strong>
+            <table style="width: 100%; font-size: 7pt; margin-top: 4px; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 2px 8px 2px 0; width: 25%;"><strong>Screen Resolution:</strong></td>
+                    <td style="padding: 2px 0;">{{ fingerprint.screen_resolution|default:"N/A" }}</td>
+                    <td style="padding: 2px 8px 2px 0; width: 25%;"><strong>Platform:</strong></td>
+                    <td style="padding: 2px 0;">{{ fingerprint.platform|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 2px 8px 2px 0;"><strong>Device Memory:</strong></td>
+                    <td style="padding: 2px 0;">{{ fingerprint.device_memory|default:"N/A" }}{% if fingerprint.device_memory %} GB{% endif %}</td>
+                    <td style="padding: 2px 8px 2px 0;"><strong>CPU Cores:</strong></td>
+                    <td style="padding: 2px 0;">{{ fingerprint.hardware_concurrency|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 2px 8px 2px 0;"><strong>Touch Support:</strong></td>
+                    <td style="padding: 2px 0;">{% if fingerprint.touch_support == True %}Yes{% elif fingerprint.touch_support == False %}No{% else %}N/A{% endif %}</td>
+                    <td style="padding: 2px 8px 2px 0;"><strong>Language:</strong></td>
+                    <td style="padding: 2px 0;">{{ fingerprint.language|default:"N/A" }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Timezone Information -->
+        <div style="margin-bottom: 8px;">
+            <strong>Timezone:</strong> {{ fingerprint.timezone|default:"N/A" }}
+            {% if fingerprint.timezone_offset is not None %}
+            (UTC{% if fingerprint.timezone_offset >= 0 %}+{% endif %}{{ fingerprint.timezone_offset|divisibleby:60|default:fingerprint.timezone_offset }} minutes)
+            {% endif %}
+        </div>
+
+        <!-- Geolocation Data -->
+        {% if fingerprint.geolocation %}
+        <div style="margin-bottom: 8px; background: #e8f5e9; padding: 6px 8px; border-radius: 3px;">
+            <strong>Location Verification:</strong>
+            <table style="width: 100%; font-size: 7pt; margin-top: 4px; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 2px 8px 2px 0; width: 20%;"><strong>Latitude:</strong></td>
+                    <td style="padding: 2px 0;">{{ fingerprint.geolocation.latitude|default:"N/A" }}</td>
+                    <td style="padding: 2px 8px 2px 0; width: 20%;"><strong>Longitude:</strong></td>
+                    <td style="padding: 2px 0;">{{ fingerprint.geolocation.longitude|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 2px 8px 2px 0;"><strong>Accuracy:</strong></td>
+                    <td style="padding: 2px 0;">{{ fingerprint.geolocation.accuracy|default:"N/A" }}{% if fingerprint.geolocation.accuracy %} meters{% endif %}</td>
+                    <td style="padding: 2px 8px 2px 0;"><strong>Timestamp:</strong></td>
+                    <td style="padding: 2px 0;">{{ fingerprint.geolocation.timestamp|default:"N/A" }}</td>
+                </tr>
+            </table>
+        </div>
+        {% else %}
+        <div style="margin-bottom: 8px; background: #fff3e0; padding: 6px 8px; border-radius: 3px;">
+            <strong>Location Verification:</strong> Not available
+        </div>
+        {% endif %}
+
+        <!-- Canvas Fingerprint -->
+        {% if fingerprint.canvas_fingerprint %}
+        <div style="margin-bottom: 8px;">
+            <strong>Canvas Fingerprint:</strong>
+            <span style="font-family: monospace; font-size: 6pt; background: #eee; padding: 2px 4px;">{{ fingerprint.canvas_fingerprint }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Document Hash -->
+        {% if document_hash %}
+        <div class="hash-code">
+            <strong>Document Hash (SHA-256):</strong> {{ document_hash }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Form {{ definition_metadata.form_number|default:"10346E" }} | Version {{ definition.version }} | Document ID: {{ instance.pk }}</p>
+        <p>Generated on {{ generated_at|date:"F j, Y, g:i A" }}</p>
+        <p>This document is electronically signed and contains integrity verification data.</p>
+    </div>
+
+    {% if status == 'flagged' %}
+    <!-- Page Break for Instructions -->
+    <div style="page-break-before: always;"></div>
+
+    <!-- Medical Provider Instructions Page -->
+    <div class="header">
+        <div class="header-brand">RSTC</div>
+        <h1>{{ medical_instructions.title }}</h1>
+        <p>Important Information for Obtaining Medical Clearance</p>
+    </div>
+
+    <div class="physician-instructions" style="margin-bottom: 20px;">
+        <h3>Instructions</h3>
+        <p>{{ medical_instructions.intro }}</p>
+        <ol style="margin: 10px 0; padding-left: 20px;">
+            {% for step in medical_instructions.steps %}
+            <li style="margin-bottom: 6px; font-size: 9pt;">{{ step }}</li>
+            {% endfor %}
+        </ol>
+        {% if medical_instructions.notes %}
+        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #90caf9;">
+            <strong style="font-size: 9pt; color: #1565c0;">Important Notes:</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                {% for note in medical_instructions.notes %}
+                <li style="margin-bottom: 4px; font-size: 8.5pt; color: #444;">{{ note }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if medical_providers %}
+    <!-- Recommended Medical Providers Section -->
+    <div class="form-section">
+        <h3>Recommended Medical Providers</h3>
+        <p class="section-note">The following medical providers are familiar with diving medicine and can provide physician clearance evaluations:</p>
+
+        {% for rel in medical_providers %}
+        <div style="background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 5px; padding: 12px; margin-bottom: 12px; page-break-inside: avoid;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <div>
+                    <strong style="font-size: 11pt; color: #333;">{{ rel.provider.organization.name }}</strong>
+                    {% if rel.is_primary %}
+                    <span style="background: #c6f6d5; color: #22543d; font-size: 7pt; padding: 2px 6px; border-radius: 3px; margin-left: 8px;">PREFERRED</span>
+                    {% endif %}
+                </div>
+                <span style="font-size: 8pt; color: #666; background: #e8e8e8; padding: 2px 8px; border-radius: 3px;">{{ rel.provider.get_provider_type_display }}</span>
+            </div>
+
+            <div style="display: flex; gap: 20px; font-size: 9pt;">
+                <div style="flex: 1;">
+                    {% if rel.provider.languages %}
+                    <p style="margin: 0 0 4px 0;"><strong>Languages:</strong> {{ rel.provider.languages|join:", " }}</p>
+                    {% endif %}
+                    {% if rel.provider.has_hyperbaric_chamber %}
+                    <p style="margin: 0 0 4px 0; color: #2e7d32;"><strong>Hyperbaric Chamber Available</strong></p>
+                    {% endif %}
+                    {% if rel.provider.is_dan_affiliated %}
+                    <p style="margin: 0 0 4px 0;"><strong>DAN Affiliated</strong></p>
+                    {% endif %}
+                    {% if rel.provider.certifications %}
+                    <p style="margin: 0 0 4px 0; font-size: 8pt; color: #666;"><strong>Certifications:</strong> {{ rel.provider.certifications|join:", " }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Locations -->
+            {% for location in rel.provider.locations.all %}
+            <div style="background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-top: 8px;">
+                {% if location.name %}
+                <p style="margin: 0 0 5px 0; font-weight: bold; font-size: 9pt; color: #444;">{{ location.name }}</p>
+                {% endif %}
+                <div style="display: flex; gap: 20px; font-size: 8.5pt;">
+                    <div style="flex: 1;">
+                        <p style="margin: 0 0 3px 0;">{{ location.address_line1 }}</p>
+                        {% if location.address_line2 %}
+                        <p style="margin: 0 0 3px 0;">{{ location.address_line2 }}</p>
+                        {% endif %}
+                        <p style="margin: 0 0 3px 0;">{{ location.city }}{% if location.state %}, {{ location.state }}{% endif %} {{ location.postal_code }}</p>
+                        <p style="margin: 0;">{{ location.country }}</p>
+                    </div>
+                    <div style="flex: 1;">
+                        {% if location.phone %}
+                        <p style="margin: 0 0 3px 0;"><strong>Phone:</strong> {{ location.phone }}</p>
+                        {% endif %}
+                        {% if location.email %}
+                        <p style="margin: 0 0 3px 0;"><strong>Email:</strong> {{ location.email }}</p>
+                        {% endif %}
+                        <p style="margin: 0 0 3px 0;"><strong>Hours:</strong> {% if location.is_24_7 %}24/7{% else %}{{ location.hours_text }}{% endif %}</p>
+                        {% if location.latitude and location.longitude %}
+                        <p style="margin: 0; font-size: 8pt;"><a href="{{ location.google_maps_url }}" style="color: #1565c0;">View on Google Maps</a></p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if rel.notes %}
+            <p style="margin: 8px 0 0 0; font-size: 8pt; color: #666; font-style: italic;">Note: {{ rel.notes }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Emergency Contacts -->
+    <div style="background: #ffebee; border: 1px solid #ef9a9a; border-radius: 5px; padding: 12px; margin-top: 15px;">
+        <h4 style="margin: 0 0 8px 0; font-size: 10pt; color: #c62828;">Emergency Contacts</h4>
+        <div style="display: flex; gap: 30px; font-size: 9pt;">
+            <div>
+                <p style="margin: 0 0 4px 0;"><strong>DAN Emergency Hotline:</strong> +1-919-684-9111</p>
+                <p style="margin: 0;"><strong>DAN Medical Information:</strong> +1-919-684-2948</p>
+            </div>
+            <div>
+                <p style="margin: 0 0 4px 0;"><strong>Local Emergency:</strong> 911</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Resources -->
+    <div style="margin-top: 15px; font-size: 8pt; color: #666;">
+        <strong>Additional Resources:</strong>
+        <ul style="margin: 5px 0; padding-left: 20px;">
+            <li><a href="https://dan.org" style="color: #1565c0;">Divers Alert Network (DAN)</a> - Diving safety organization with 24/7 emergency hotline and medical information services</li>
+            <li><a href="https://wrstc.com/medical-guidelines" style="color: #1565c0;">RSTC Medical Guidelines</a> - Official recreational scuba training council medical screening guidelines</li>
+        </ul>
+    </div>
+
+    <!-- Page Break for Physician Form -->
+    <div style="page-break-before: always;"></div>
+
+    <!-- Physician Clearance Form -->
+    <div class="header">
+        <div class="header-brand">RSTC</div>
+        <h1>Medical Clearance Form for Diving</h1>
+        <p>Physician Evaluation Required</p>
+    </div>
+
+    <div class="physician-form">
+        <!-- Instructions for Physician -->
+        <div class="physician-instructions">
+            <h3>Instructions for Physician</h3>
+            <p>This individual has completed a diving medical questionnaire and indicated one or more conditions that require physician evaluation before participating in recreational scuba diving or freediving.</p>
+            <p>Please review the flagged conditions below, examine the patient as appropriate, and provide your medical clearance determination.</p>
+            <p><strong>Note:</strong> For diving-related medical guidelines, refer to the RSTC Medical Screening Guidelines or consult the Divers Alert Network (DAN) at <a href="https://dan.org">dan.org</a>.</p>
+        </div>
+
+        <!-- Patient Information -->
+        <div class="form-section">
+            <h3>Patient Information</h3>
+            <table class="patient-info-table">
+                <tr>
+                    <td class="label-cell">Patient Name:</td>
+                    <td class="value-cell"><strong>{{ respondent_name }}</strong></td>
+                    <td class="label-cell">Date of Birth:</td>
+                    <td class="value-cell write-line"></td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Questionnaire Date:</td>
+                    <td class="value-cell">{{ completed_at|date:"F j, Y" }}</td>
+                    <td class="label-cell">Document ID:</td>
+                    <td class="value-cell" style="font-family: monospace; font-size: 7pt;">{{ instance.pk }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Flagged Conditions -->
+        <div class="form-section">
+            <h3>Conditions Requiring Evaluation</h3>
+            <p class="section-note">The patient answered YES to the following questions:</p>
+            <div class="flagged-conditions">
+                {% for item in screening_questions %}
+                {% if item.answer_bool == True %}
+                <div class="flagged-item">
+                    <span class="flagged-number">{{ item.question.sequence }}.</span>
+                    {{ item.question.question_text }}
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% for box in follow_up_boxes %}
+                {% if box.visible %}
+                {% for fq in box.questions %}
+                {% if fq.answer_bool == True %}
+                <div class="flagged-item sub-item">
+                    <span class="flagged-number">&bull;</span>
+                    {{ fq.question.question_text }}
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Physician Evaluation -->
+        <div class="form-section">
+            <h3>Physician Evaluation</h3>
+            <div class="evaluation-notes">
+                <p class="section-note">Please document your findings and any relevant examination results:</p>
+                <div class="write-area"></div>
+            </div>
+        </div>
+
+        <!-- Clearance Decision -->
+        <div class="form-section">
+            <h3>Clearance Determination</h3>
+            <p class="section-note">Based on my examination and review of the patient's medical history:</p>
+
+            <div class="clearance-options">
+                <div class="clearance-option">
+                    <div class="checkbox-box"></div>
+                    <div class="option-content">
+                        <strong>CLEARED FOR DIVING</strong>
+                        <p>This patient is medically cleared to participate in recreational scuba diving and freediving without restrictions.</p>
+                    </div>
+                </div>
+
+                <div class="clearance-option">
+                    <div class="checkbox-box"></div>
+                    <div class="option-content">
+                        <strong>CLEARED WITH RESTRICTIONS</strong>
+                        <p>This patient is cleared for diving with the following restrictions:</p>
+                        <div class="restriction-lines">
+                            <div class="write-line"></div>
+                            <div class="write-line"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="clearance-option">
+                    <div class="checkbox-box"></div>
+                    <div class="option-content">
+                        <strong>NOT CLEARED FOR DIVING</strong>
+                        <p>This patient is NOT medically cleared for scuba diving or freediving at this time.</p>
+                        <p>Reason: <span class="write-line inline"></span></p>
+                    </div>
+                </div>
+
+                <div class="clearance-option">
+                    <div class="checkbox-box"></div>
+                    <div class="option-content">
+                        <strong>REQUIRES SPECIALIST EVALUATION</strong>
+                        <p>Referral to: <span class="write-line inline"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Physician Signature -->
+        <div class="form-section physician-signature-section">
+            <h3>Physician Attestation</h3>
+            <p class="attestation-text">I certify that I have examined this patient and reviewed their diving medical questionnaire. My clearance determination above is based on my medical judgment and current diving medicine guidelines.</p>
+
+            <div class="signature-grid">
+                <div class="signature-col">
+                    <div class="signature-line"></div>
+                    <p class="signature-label">Physician Signature</p>
+                </div>
+                <div class="signature-col">
+                    <div class="signature-line"></div>
+                    <p class="signature-label">Date</p>
+                </div>
+            </div>
+
+            <div class="physician-details-grid">
+                <div class="detail-row">
+                    <span class="detail-label">Physician Name (Print):</span>
+                    <span class="write-line flex-line"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Medical License #:</span>
+                    <span class="write-line flex-line"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Phone:</span>
+                    <span class="write-line flex-line"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Clinic/Hospital:</span>
+                    <span class="write-line flex-line"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Address:</span>
+                    <span class="write-line flex-line"></span>
+                </div>
+            </div>
+
+            <div class="stamp-area">
+                <p>Official Stamp/Seal (if applicable):</p>
+                <div class="stamp-box"></div>
+            </div>
+        </div>
+
+        <!-- Footer for Physician Form -->
+        <div class="footer physician-footer">
+            <p>Form {{ definition_metadata.form_number|default:"10346E" }} - Physician Clearance | Version {{ definition.version }}</p>
+            <p>This form must be completed by a licensed physician and returned to the dive operator.</p>
+            <p>For diving medical guidelines: <a href="https://dan.org">dan.org</a> | RSTC Medical Standards</p>
+        </div>
+    </div>
+    {% endif %}
+</body>
+</html>

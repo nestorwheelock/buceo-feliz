@@ -1,0 +1,633 @@
+{% extends "diveops/staff/_base.html" %}
+{% load portal_ui_tags diveops_filters diveops_tags %}
+
+{% block breadcrumb %}
+<li>
+    <div class="flex items-center">
+        <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+        </svg>
+        <a href="{% url 'diveops:staff-site-list' %}" class="ml-2 text-sm font-medium text-gray-500 hover:text-gray-700">Dive Sites</a>
+    </div>
+</li>
+<li>
+    <div class="flex items-center">
+        <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+        </svg>
+        <span class="ml-2 text-sm font-medium text-gray-500">{{ page_title }}</span>
+    </div>
+</li>
+{% endblock %}
+
+{% block staff_content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <!-- Profile Photo -->
+            <div class="relative group">
+                {% if profile_photo %}
+                <div class="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 shadow-sm">
+                    {% thumbnail_url profile_photo "medium" as thumb %}
+                    <img src="{% if thumb %}{{ thumb }}{% else %}{{ profile_photo.file.url }}{% endif %}"
+                         alt="{{ site.name }}"
+                         class="w-full h-full object-cover">
+                </div>
+                <form method="post" action="{% url 'diveops:site-clear-profile-photo' pk=site.pk %}" class="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {% csrf_token %}
+                    <button type="submit" class="p-1 bg-red-600 hover:bg-red-700 rounded-full text-white shadow" title="Clear profile photo">
+                        {% icon "x" "w-3 h-3" %}
+                    </button>
+                </form>
+                {% else %}
+                <a href="{% url 'diveops:site-photo-upload' pk=site.pk %}"
+                   class="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center shadow-sm hover:bg-gray-200 transition-colors border-2 border-dashed border-gray-300 hover:border-blue-400"
+                   title="Upload photos">
+                    {% icon "plus" "w-8 h-8 text-gray-400 hover:text-blue-500" %}
+                </a>
+                {% endif %}
+            </div>
+            <div>
+            <div class="flex items-center space-x-3">
+                <h1 class="text-2xl font-bold text-gray-900">{{ site.name }}</h1>
+                <!-- Access Type Badge -->
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    {% if site.dive_mode == 'boat' %}bg-blue-100 text-blue-800
+                    {% elif site.dive_mode == 'shore' %}bg-green-100 text-green-800
+                    {% elif site.dive_mode == 'cenote' %}bg-cyan-100 text-cyan-800
+                    {% elif site.dive_mode == 'cavern' %}bg-purple-100 text-purple-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ site.get_dive_mode_display|default:"Unknown" }}
+                </span>
+                <!-- Status Badge -->
+                {% if site.is_active %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+                {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Inactive</span>
+                {% endif %}
+            </div>
+            {% if site.description %}
+            <p class="text-gray-600 mt-1">{{ site.description }}</p>
+            {% endif %}
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'diveops:staff-site-edit' pk=site.pk %}"
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                {% icon "edit" "w-4 h-4 mr-2" %}
+                Edit
+            </a>
+            <a href="{% url 'diveops:staff-site-delete' pk=site.pk %}"
+               class="inline-flex items-center px-4 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50">
+                {% icon "trash-2" "w-4 h-4 mr-2" %}
+                Delete
+            </a>
+        </div>
+    </div>
+
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <!-- Site Details -->
+        <div class="lg:col-span-1 flex flex-col">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1">
+                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                    <h3 class="text-lg font-medium text-gray-900">Site Details</h3>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Difficulty</dt>
+                        <dd class="mt-1">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if site.difficulty == 'beginner' %}bg-green-100 text-green-800
+                                {% elif site.difficulty == 'intermediate' %}bg-yellow-100 text-yellow-800
+                                {% elif site.difficulty == 'advanced' %}bg-orange-100 text-orange-800
+                                {% elif site.difficulty == 'expert' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ site.difficulty|title }}
+                            </span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Maximum Depth</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ site.max_depth_meters }} meters</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Minimum Certification</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            {% if site.min_certification_level %}
+                                {{ site.min_certification_level.name }}
+                                <span class="text-gray-500">({{ site.min_certification_level.agency.name }})</span>
+                            {% else %}
+                                <span class="text-gray-400">None required</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Rating</dt>
+                        <dd class="mt-1 flex items-center">
+                            {% if site.rating %}
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= site.rating %}
+                                <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                {% else %}
+                                <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                {% endif %}
+                            {% endfor %}
+                            <span class="ml-2 text-sm text-gray-600">({{ site.rating }}/5)</span>
+                            {% else %}
+                            <span class="text-sm text-gray-400 italic">Not yet rated</span>
+                            <a href="{% url 'diveops:staff-site-edit' pk=site.pk %}" class="ml-2 text-sm text-blue-600 hover:text-blue-800">Leave a rating</a>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    {% if site.tags %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Tags</dt>
+                        <dd class="mt-1 flex flex-wrap gap-1">
+                            {% for tag in site.tags %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                {{ tag }}
+                            </span>
+                            {% endfor %}
+                        </dd>
+                    </div>
+                    {% endif %}
+                    {% if site.protected_area %}
+                    <div class="pt-3 mt-3 border-t border-gray-200">
+                        <dt class="text-sm font-medium text-gray-500">Protected Area</dt>
+                        <dd class="mt-1">
+                            <a href="{% url 'diveops:protected-area-detail' pk=site.protected_area.pk %}" class="text-sm text-blue-600 hover:text-blue-800">
+                                {{ site.protected_area.name }}
+                            </a>
+                            {% if site.protected_area_zone %}
+                            <div class="text-xs text-gray-500 mt-0.5">
+                                Zone: {{ site.protected_area_zone.name }}
+                            </div>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    {% endif %}
+
+                    <!-- Featured Photos (2x2 grid) -->
+                    {% if featured_photos or all_photos %}
+                    <div class="pt-3 mt-3 border-t border-gray-200">
+                        <dt class="text-sm font-medium text-gray-500 mb-2">Featured Photos</dt>
+                        <dd class="grid grid-cols-2 gap-2">
+                            {% for i in "1234" %}
+                            {% with featured_photos|get_item:forloop.counter0 as photo %}
+                            <div class="aspect-square bg-gray-100 rounded overflow-hidden">
+                                {% if photo %}
+                                {% thumbnail_url photo.document "medium" as thumb %}
+                                <img src="{% if thumb %}{{ thumb }}{% else %}{{ photo.document.file.url }}{% endif %}"
+                                     alt="{{ photo.caption|default:site.name }}"
+                                     class="w-full h-full object-cover cursor-pointer hover:opacity-90"
+                                     data-lightbox="{{ photo.document.file.url }}"
+                                     data-caption="{{ photo.caption|default:'' }}">
+                                {% else %}
+                                <div class="w-full h-full flex items-center justify-center text-gray-300">
+                                    <span class="text-xs">{{ forloop.counter }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endwith %}
+                            {% endfor %}
+                        </dd>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div class="lg:col-span-2 flex flex-col">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
+                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                    <h3 class="text-lg font-medium text-gray-900">Location</h3>
+                </div>
+                <div class="p-4 flex-1 flex flex-col">
+                    {% if site.place %}
+                    <div class="mb-4 text-sm text-gray-600">
+                        <strong>Coordinates:</strong> {{ site.place.latitude }}, {{ site.place.longitude }}
+                    </div>
+                    <!-- Leaflet Map -->
+                    <div id="site-map" class="flex-1 min-h-[24rem] rounded-lg border border-gray-200"></div>
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var lat = {{ site.place.latitude }};
+                            var lng = {{ site.place.longitude }};
+                            var map = L.map('site-map').setView([lat, lng], 14);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                attribution: '&copy; OpenStreetMap contributors'
+                            }).addTo(map);
+                            L.marker([lat, lng]).addTo(map)
+                                .bindPopup('<strong>{{ site.name }}</strong>')
+                                .openPopup();
+                        });
+                    </script>
+                    {% else %}
+                    <div class="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div class="text-center text-gray-500">
+                            {% icon "map-pin" "w-8 h-8 mx-auto mb-2" %}
+                            <p>No location set</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dive Plans for this Site -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <h3 class="text-lg font-medium text-gray-900">Dive Plans</h3>
+                <span class="text-sm text-gray-500">{{ dive_plans|length }} plan{{ dive_plans|length|pluralize }}</span>
+            </div>
+            <a href="{% url 'diveops:dive-plan-create' %}?site={{ site.pk }}"
+               class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                {% icon "plus" "w-4 h-4 mr-1" %}
+                Add Dive Plan
+            </a>
+        </div>
+        {% if dive_plans %}
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Excursion Type</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dive</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Depth</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gas</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for plan in dive_plans %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        {% with plan.excursion_types.first as et %}
+                        {% if et %}
+                        <a href="{% url 'diveops:excursion-type-detail' pk=et.pk %}" class="text-sm text-blue-600 hover:text-blue-800">
+                            {{ et.name }}
+                        </a>
+                        {% if plan.excursion_types.count > 1 %}
+                        <span class="text-xs text-gray-400">+{{ plan.excursion_types.count|add:"-1" }} more</span>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-sm text-gray-400 italic">Unassigned</span>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="text-sm font-medium text-gray-900">#{{ plan.sequence }}: {{ plan.name }}</span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="text-sm text-gray-900">
+                            {% if plan.planned_depth_meters %}{{ plan.planned_depth_meters }}m{% else %}-{% endif %}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        {% if plan.gas %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            {% if plan.gas == 'air' %}bg-gray-100 text-gray-800
+                            {% elif plan.gas == 'ean32' %}bg-green-100 text-green-800
+                            {% elif plan.gas == 'ean36' %}bg-blue-100 text-blue-800
+                            {% else %}bg-purple-100 text-purple-800{% endif %}">
+                            {{ plan.gas|upper }}
+                        </span>
+                        {% else %}
+                        <span class="text-sm text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            {% if plan.status == 'published' %}bg-green-100 text-green-800
+                            {% elif plan.status == 'draft' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ plan.status|title }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <a href="{% url 'diveops:excursion-type-dive-edit' pk=plan.pk %}" class="text-sm text-blue-600 hover:text-blue-800">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-6 text-center">
+            <div class="text-gray-400 mb-2">
+                {% icon "compass" "w-8 h-8 mx-auto" %}
+            </div>
+            <p class="text-gray-500 mb-3">No dive plans created for this site yet</p>
+            <a href="{% url 'diveops:dive-plan-create' %}?site={{ site.pk }}"
+               class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                {% icon "plus" "w-4 h-4 mr-2" %}
+                Create First Dive Plan
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Excursion Types using this Site -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <h3 class="text-lg font-medium text-gray-900">Suitable Excursion Types</h3>
+            <span class="text-sm text-gray-500">{{ excursion_types|length }} type{{ excursion_types|length|pluralize }}</span>
+        </div>
+        {% if excursion_types %}
+        <div class="p-4">
+            <div class="flex flex-wrap gap-2">
+                {% for et in excursion_types %}
+                <a href="{% url 'diveops:excursion-type-detail' pk=et.pk %}"
+                   class="inline-flex items-center px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-blue-300">
+                    {% icon "package" "w-4 h-4 mr-2 text-gray-400" %}
+                    {{ et.name }}
+                    <span class="ml-2 text-xs text-gray-400">{{ et.get_dive_mode_display }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="p-6 text-center">
+            <div class="text-gray-400 mb-2">
+                {% icon "package" "w-8 h-8 mx-auto" %}
+            </div>
+            <p class="text-gray-500">This site is not assigned to any excursion types</p>
+            <p class="text-sm text-gray-400 mt-1">Add this site to an excursion type's "Suitable Sites" to link them</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Protected Area Rules -->
+    {% if zone_rules %}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <h3 class="text-lg font-medium text-gray-900">Protected Area Rules</h3>
+            <span class="text-sm text-gray-500">{{ zone_rules|length }} rule{{ zone_rules|length|pluralize }}</span>
+        </div>
+        <div class="divide-y divide-gray-200">
+            {% for rule in zone_rules %}
+            <div class="p-4 flex items-start justify-between">
+                <div>
+                    <div class="text-sm font-medium text-gray-900">{{ rule.subject }}</div>
+                    <div class="text-sm text-gray-500 mt-0.5">
+                        {{ rule.activity|default:"General" }} - {{ rule.get_rule_type_display }}
+                        {% if rule.value %}({{ rule.get_operator_display }} {{ rule.value }}){% endif %}
+                    </div>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    {% if rule.enforcement_level == 'mandatory' %}bg-red-100 text-red-800
+                    {% elif rule.enforcement_level == 'prohibited' %}bg-red-100 text-red-800
+                    {% elif rule.enforcement_level == 'recommended' %}bg-yellow-100 text-yellow-800
+                    {% else %}bg-blue-100 text-blue-800{% endif %}">
+                    {{ rule.get_enforcement_level_display }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Excursions -->
+    {% if recent_excursions %}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <h3 class="text-lg font-medium text-gray-900">Recent Excursions</h3>
+        </div>
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shop</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for excursion in recent_excursions %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <a href="{% url 'diveops:excursion-detail' pk=excursion.pk %}" class="text-sm text-blue-600 hover:text-blue-800">
+                            {{ excursion.departure_time|date:"M j, Y" }}
+                        </a>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        {% if excursion.excursion_type %}{{ excursion.excursion_type.name }}{% else %}-{% endif %}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {% if excursion.dive_shop %}{{ excursion.dive_shop.name }}{% else %}-{% endif %}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            {% if excursion.status == 'completed' %}bg-green-100 text-green-800
+                            {% elif excursion.status == 'scheduled' %}bg-blue-100 text-blue-800
+                            {% elif excursion.status == 'cancelled' %}bg-red-100 text-red-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ excursion.status|title }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Photo Gallery -->
+    {% if all_photos %}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <h3 class="text-lg font-medium text-gray-900">Photo Gallery</h3>
+                <span class="text-sm text-gray-500">{{ all_photos|length }} photo{{ all_photos|length|pluralize }}</span>
+            </div>
+            <a href="{% url 'diveops:site-photo-upload' pk=site.pk %}"
+               class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                {% icon "plus" "w-4 h-4 mr-1" %}
+                Add More
+            </a>
+        </div>
+        <div class="p-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {% for photo in all_photos %}
+                <div class="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group">
+                    {% thumbnail_url photo.document "medium" as thumb %}
+                    <img src="{% if thumb %}{{ thumb }}{% else %}{{ photo.document.file.url }}{% endif %}"
+                         alt="{{ photo.caption|default:site.name }}"
+                         class="w-full h-full object-cover cursor-pointer"
+                         data-lightbox="{{ photo.document.file.url }}"
+                         data-caption="{{ photo.caption|default:'' }}">
+
+                    <!-- Status badges -->
+                    <div class="absolute top-1 left-1 flex gap-1">
+                        {% if photo.document == profile_photo %}
+                        <span class="px-1.5 py-0.5 bg-green-600 rounded text-[10px] text-white font-medium">Profile</span>
+                        {% endif %}
+                        {% if photo.is_featured %}
+                        <span class="px-1.5 py-0.5 bg-blue-600 rounded text-[10px] text-white font-medium">#{{ photo.position }}</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Hover actions -->
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div class="flex flex-col gap-1">
+                            {% if photo.document != profile_photo %}
+                            <form method="post" action="{% url 'diveops:site-photo-set-profile' pk=site.pk photo_pk=photo.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="px-2 py-1 bg-green-600 hover:bg-green-700 rounded text-xs text-white font-medium w-full">
+                                    Set Profile
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% if not photo.is_featured %}
+                            <form method="post" action="{% url 'diveops:site-photo-set-featured' pk=site.pk photo_pk=photo.pk %}">
+                                {% csrf_token %}
+                                <select name="position" onchange="this.form.submit()" class="px-2 py-1 rounded text-xs bg-blue-600 text-white cursor-pointer w-full">
+                                    <option value="">Feature as...</option>
+                                    <option value="1">#1</option>
+                                    <option value="2">#2</option>
+                                    <option value="3">#3</option>
+                                    <option value="4">#4</option>
+                                </select>
+                            </form>
+                            {% else %}
+                            <form method="post" action="{% url 'diveops:site-photo-unfeature' pk=site.pk photo_pk=photo.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded text-xs text-white font-medium w-full">
+                                    Unfeature
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if photo.caption %}
+                    <div class="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black/60 text-xs text-white truncate">
+                        {{ photo.caption }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- No Photos - Upload CTA -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <h3 class="text-lg font-medium text-gray-900">Photo Gallery</h3>
+        </div>
+        <div class="p-8 text-center">
+            <div class="text-gray-400 mb-3">
+                {% icon "camera" "w-12 h-12 mx-auto" %}
+            </div>
+            <h4 class="text-lg font-medium text-gray-900 mb-1">No Photos Yet</h4>
+            <p class="text-gray-500 mb-4">Add photos to showcase this dive site</p>
+            <a href="{% url 'diveops:site-photo-upload' pk=site.pk %}"
+               class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                {% icon "upload" "w-4 h-4 mr-2" %}
+                Upload Photos
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Lightbox Modal -->
+<div id="lightbox" class="fixed inset-0 hidden bg-black/90 flex items-center justify-center" style="z-index: 9999;" onclick="closeLightbox(event)">
+    <button onclick="closeLightbox(event)" class="absolute top-4 right-4 text-white hover:text-gray-300 z-10">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+    </button>
+    <button onclick="prevPhoto(event)" class="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 p-2">
+        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+    </button>
+    <button onclick="nextPhoto(event)" class="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 p-2">
+        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+    </button>
+    <img id="lightbox-img" src="" alt="" class="max-h-[90vh] max-w-[90vw] object-contain">
+    <div id="lightbox-caption" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-2 rounded"></div>
+</div>
+
+<script>
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxCaption = document.getElementById('lightbox-caption');
+    let photoUrls = [];
+    let currentIndex = 0;
+
+    // Collect all photo URLs from the gallery
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('[data-lightbox]').forEach((el, index) => {
+            photoUrls.push({
+                url: el.dataset.lightbox,
+                caption: el.dataset.caption || ''
+            });
+            el.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openLightbox(index);
+            });
+        });
+    });
+
+    function openLightbox(index) {
+        currentIndex = index;
+        showPhoto();
+        lightbox.classList.remove('hidden');
+        lightbox.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox(event) {
+        if (event.target === lightbox || event.currentTarget.tagName === 'BUTTON') {
+            lightbox.classList.add('hidden');
+            lightbox.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function showPhoto() {
+        if (photoUrls[currentIndex]) {
+            lightboxImg.src = photoUrls[currentIndex].url;
+            lightboxCaption.textContent = photoUrls[currentIndex].caption;
+            lightboxCaption.style.display = photoUrls[currentIndex].caption ? 'block' : 'none';
+        }
+    }
+
+    function prevPhoto(event) {
+        event.stopPropagation();
+        currentIndex = (currentIndex - 1 + photoUrls.length) % photoUrls.length;
+        showPhoto();
+    }
+
+    function nextPhoto(event) {
+        event.stopPropagation();
+        currentIndex = (currentIndex + 1) % photoUrls.length;
+        showPhoto();
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (!lightbox.classList.contains('hidden')) {
+            if (e.key === 'Escape') closeLightbox({target: lightbox});
+            if (e.key === 'ArrowLeft') prevPhoto(e);
+            if (e.key === 'ArrowRight') nextPhoto(e);
+        }
+    });
+</script>
+{% endblock %}

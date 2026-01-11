@@ -1,0 +1,137 @@
+{% extends "portal_ui/base_staff.html" %}
+{% load portal_ui_tags %}
+
+{% block breadcrumb %}
+<li>
+    <div class="flex items-center">
+        <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+        </svg>
+        <a href="{% url 'diveops:excursion-list' %}" class="ml-2 text-sm font-medium text-gray-500 hover:text-gray-700">Excursions</a>
+    </div>
+</li>
+<li>
+    <div class="flex items-center">
+        <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+        </svg>
+        <a href="{% url 'diveops:excursion-detail' pk=excursion.pk %}" class="ml-2 text-sm font-medium text-gray-500 hover:text-gray-700">{{ excursion.dive_site.name }}</a>
+    </div>
+</li>
+<li>
+    <div class="flex items-center">
+        <svg class="flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+        </svg>
+        <span class="ml-2 text-sm font-medium text-gray-500">Book Diver</span>
+    </div>
+</li>
+{% endblock %}
+
+{% block staff_content %}
+<div class="max-w-lg space-y-6">
+    <!-- Page Header -->
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Book Diver</h1>
+        <p class="text-gray-600">{{ excursion.dive_site.name }} - {{ excursion.departure_time|date:"M j, Y g:i A" }}</p>
+    </div>
+
+    <!-- Excursion Info -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                {% icon "info" "h-5 w-5 text-blue-400" %}
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">Excursion Details</h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <p>{{ excursion.spots_available }} spots remaining of {{ excursion.max_divers }} total</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Eligibility Alert -->
+    {% if eligibility_result and not eligibility_result.allowed %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                {% icon "alert-triangle" "h-5 w-5 text-red-400" %}
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">Diver Not Eligible</h3>
+                <div class="mt-2 text-sm text-red-700">
+                    <ul class="list-disc pl-5 space-y-1">
+                        {% for reason in eligibility_result.reasons %}
+                        <li>{{ reason }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% if eligibility_result.required_actions %}
+                <div class="mt-3">
+                    <h4 class="text-sm font-medium text-red-800">Required Actions:</h4>
+                    <ul class="mt-1 list-disc pl-5 text-sm text-red-700 space-y-1">
+                        {% for action in eligibility_result.required_actions %}
+                        <li>{{ action }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Booking Form -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <form method="post" class="p-6 space-y-6">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="rounded-lg bg-red-50 p-4 border border-red-200">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        {% icon "alert-circle" "h-5 w-5 text-red-400" %}
+                    </div>
+                    <div class="ml-3">
+                        <div class="text-sm text-red-700">
+                            {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Diver Selection -->
+            <div>
+                <label for="id_diver" class="block text-sm font-medium text-gray-700">Select Diver <span class="text-red-500">*</span></label>
+                <select name="diver" id="id_diver"
+                        class="mt-1 block w-full px-3 py-2 border {% if form.diver.errors %}border-red-300{% else %}border-gray-300{% endif %} rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Choose a diver...</option>
+                    {% for diver in form.fields.diver.queryset %}
+                    <option value="{{ diver.pk }}" {% if form.diver.value == diver.pk|stringformat:'s' %}selected{% endif %}>
+                        {{ diver.person.first_name }} {{ diver.person.last_name }} ({{ diver.get_certification_level_display }})
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if form.diver.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.diver.errors.0 }}</p>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500">{{ form.fields.diver.help_text }}</p>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end space-x-3 pt-4 border-t">
+                <a href="{% url 'diveops:excursion-detail' pk=excursion.pk %}" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" class="px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                    Book Diver
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

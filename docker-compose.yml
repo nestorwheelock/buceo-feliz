@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: diveops_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-diveops}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-diveops}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: diveops_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    container_name: diveops_web
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./src:/app/src
+      - ./templates:/app/templates
+      - ./static:/app/static
+      - ./tests:/app/tests
+      - ./manage.py:/app/manage.py
+      - ./lib/django-primitives/packages:/lib/packages:ro
+      - media_data:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=diveops.settings.dev
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - DEBUG=True
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-diveops}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - REDIS_URL=redis://redis:6379/0
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  media_data:
