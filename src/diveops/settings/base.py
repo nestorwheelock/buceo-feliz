@@ -62,8 +62,9 @@ PRIMITIVES_APPS = [
     "django_geo",
 ]
 
-# Third-party UI
+# Third-party apps
 THIRD_PARTY_APPS = [
+    "channels",
     "django_portal_ui",
 ]
 
@@ -142,6 +143,16 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": os.environ.get("REDIS_URL", "redis://localhost:6379/0"),
     }
+}
+
+# Django Channels configuration
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get("REDIS_URL", "redis://localhost:6379/0")],
+        },
+    },
 }
 
 # Custom user model

@@ -202,6 +202,10 @@
                 ? 'http://localhost:8000/public/chat/'
                 : '/public/chat/';
 
+            // WebSocket URL
+            const WS_PROTOCOL = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const WS_HOST = window.location.port === '8080' ? 'localhost:8000' : window.location.host;
+
             // Elements
             const bubble = document.getElementById('chat-bubble');
             const chatWindow = document.getElementById('chat-window');
@@ -219,6 +223,64 @@
             let isOpen = false;
             let isRegistered = false;
             let conversationId = null;
+            let visitorId = null;
+            let socket = null;
+            let lastMessageCount = 0;
+            let reconnectAttempts = 0;
+            const MAX_RECONNECT_ATTEMPTS = 5;
+
+            // WebSocket connection
+            function connectWebSocket() {
+                if (!visitorId) {
+                    console.log('No visitor ID, cannot connect WebSocket');
+                    return;
+                }
+
+                const wsUrl = `${WS_PROTOCOL}//${WS_HOST}/ws/chat/visitor/${visitorId}/`;
+                console.log('Connecting WebSocket:', wsUrl);
+
+                socket = new WebSocket(wsUrl);
+
+                socket.onopen = function() {
+                    console.log('WebSocket connected');
+                    reconnectAttempts = 0;
+                };
+
+                socket.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    console.log('WebSocket message:', data);
+
+                    if (data.type === 'new_message' && data.direction === 'outbound') {
+                        // Staff message received - add to chat
+                        addMessage(data.message, 'staff', true);
+                        lastMessageCount++;
+                    }
+                };
+
+                socket.onclose = function(event) {
+                    console.log('WebSocket closed:', event.code);
+                    socket = null;
+
+                    // Reconnect if chat is open and we haven't exceeded attempts
+                    if (isOpen && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        reconnectAttempts++;
+                        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                        console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts})`);
+                        setTimeout(connectWebSocket, delay);
+                    }
+                };
+
+                socket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                };
+            }
+
+            function disconnectWebSocket() {
+                if (socket) {
+                    socket.close();
+                    socket = null;
+                }
+            }
 
             // Toggle chat window
             function toggleChat() {
@@ -230,6 +292,8 @@
                 if (isOpen) {
                     loadConversation();
                     input.focus();
+                } else {
+                    disconnectWebSocket();
                 }
             }
 
@@ -245,6 +309,11 @@
                     });
                     const data = await response.json();
 
+                    // Store visitor ID for WebSocket connection
+                    if (data.visitor_id) {
+                        visitorId = data.visitor_id;
+                    }
+
                     if (data.status === 'returning_visitor') {
                         isRegistered = true;
                         registration.classList.add('hidden');
@@ -256,6 +325,7 @@
                             data.messages.forEach(msg => {
                                 addMessage(msg.body, msg.direction === 'inbound' ? 'user' : 'staff', false);
                             });
+                            lastMessageCount = data.messages.length;
                         }
 
                         // Show welcome back message
@@ -265,6 +335,12 @@
                             welcomeBack.textContent = `Welcome back, ${data.person.first_name}!`;
                             messages.insertBefore(welcomeBack, messages.firstChild);
                         }
+
+                        // Connect WebSocket for real-time updates
+                        connectWebSocket();
+                    } else if (data.status === 'new_visitor') {
+                        // New visitor - store visitor ID for later WebSocket connection
+                        visitorId = data.visitor_id;
                     }
                 } catch (error) {
                     console.error('Failed to load conversation:', error);
@@ -282,8 +358,8 @@
                 avatar.textContent = sender === 'user' ? 'You' : 'HD';
 
                 const bubble = document.createElement('div');
-                bubble.className = 'rounded-lg px-3 py-2 shadow-sm max-w-[80%]';
-                bubble.classList.add(sender === 'user' ? 'bg-primary-600 text-white rounded-tr-none' : 'bg-white rounded-tl-none');
+                bubble.className = 'rounded-lg px-3 py-2 shadow-sm max-w-[80%] ' +
+                    (sender === 'user' ? 'bg-primary-600 text-white rounded-tr-none' : 'bg-white rounded-tl-none');
 
                 const text_el = document.createElement('p');
                 text_el.className = 'text-sm';
@@ -372,14 +448,24 @@
                     console.log('Response data:', data);
 
                     if (response.ok) {
+                        const wasFirstMessage = !isRegistered;
                         isRegistered = true;
                         registration.classList.add('hidden');
                         conversationId = data.conversation_id;
+                        if (data.visitor_id) {
+                            visitorId = data.visitor_id;
+                        }
+                        lastMessageCount++; // Track that we sent a message
 
-                        // Show confirmation for first message
-                        setTimeout(() => {
-                            addMessage("Thanks for reaching out! We'll get back to you shortly.", 'staff');
-                        }, 500);
+                        // Show confirmation for first message only
+                        if (wasFirstMessage) {
+                            setTimeout(() => {
+                                addMessage("Thanks for reaching out! We'll get back to you shortly.", 'staff');
+                                lastMessageCount++; // Count the auto-reply too
+                            }, 500);
+                            // Connect WebSocket after first message
+                            connectWebSocket();
+                        }
                     } else {
                         // Show error
                         addMessage(data.error || 'Failed to send message. Please try again.', 'staff');

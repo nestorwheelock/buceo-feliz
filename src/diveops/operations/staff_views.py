@@ -8992,12 +8992,45 @@ class LeadListView(StaffPortalMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
+        from django.contrib.contenttypes.models import ContentType
+        from django.db.models import Case, When, Value, BooleanField, OuterRef, Subquery, F, CharField
+        from django.db.models.functions import Cast
         from django_parties.models import Person
+        from django_communication.models import Conversation
+
+        person_ct = ContentType.objects.get_for_model(Person)
+
+        conversation_subquery = Conversation.objects.filter(
+            related_content_type=person_ct,
+            related_object_id=Cast(OuterRef("pk"), output_field=CharField()),
+            deleted_at__isnull=True,
+        )
 
         queryset = Person.objects.filter(
             lead_status__isnull=False,
             deleted_at__isnull=True,
-        ).select_related("lead_owner").order_by("-created_at")
+        ).select_related("lead_owner").annotate(
+            conv_last_inbound=Subquery(
+                conversation_subquery.values("last_inbound_at")[:1]
+            ),
+            conv_last_outbound=Subquery(
+                conversation_subquery.values("last_outbound_at")[:1]
+            ),
+            needs_reply=Case(
+                When(
+                    conv_last_inbound__isnull=False,
+                    conv_last_outbound__isnull=True,
+                    then=Value(True),
+                ),
+                When(
+                    conv_last_inbound__isnull=False,
+                    conv_last_inbound__gt=F("conv_last_outbound"),
+                    then=Value(True),
+                ),
+                default=Value(False),
+                output_field=BooleanField(),
+            ),
+        ).order_by("-created_at")
 
         # Filter by status
         status = self.request.GET.get("status")
@@ -9059,7 +9092,7 @@ class LeadDetailView(StaffPortalMixin, DetailView):
         ).select_related("lead_owner")
 
     def get_context_data(self, **kwargs):
-        from .crm.services import get_lead_timeline, get_lead_notes
+        from .crm.services import get_lead_timeline, get_lead_notes, get_lead_conversation
 
         context = super().get_context_data(**kwargs)
         lead = self.object
@@ -9078,6 +9111,16 @@ class LeadDetailView(StaffPortalMixin, DetailView):
 
         # Status choices for action buttons
         context["status_choices"] = lead.LEAD_STATUS_CHOICES
+
+        # Chat conversation and messages
+        conversation = get_lead_conversation(lead)
+        context["conversation"] = conversation
+        if conversation:
+            context["chat_messages"] = list(
+                conversation.messages.filter(deleted_at__isnull=True).order_by("created_at")
+            )
+        else:
+            context["chat_messages"] = []
 
         return context
 
@@ -9172,6 +9215,127 @@ class LeadAddNoteView(StaffPortalMixin, View):
         add_lead_note(lead, body, author=request.user)
         messages.success(request, "Note added.")
         return redirect("diveops:lead-detail", pk=pk)
+
+
+class LeadSendMessageView(StaffPortalMixin, View):
+    """Send a message to a lead. Creates Message + sends email."""
+
+    def post(self, request, pk):
+        import logging
+        from django.db import transaction
+        from django_parties.models import Person
+        from django_communication.models import Message
+        from .crm.services import get_or_create_lead_conversation, send_lead_notification_email
+
+        logger = logging.getLogger(__name__)
+        lead = get_object_or_404(Person, pk=pk, lead_status__isnull=False, deleted_at__isnull=True)
+        message_text = request.POST.get("message", "").strip()
+
+        if not message_text:
+            messages.error(request, "Message cannot be empty.")
+            return redirect("diveops:lead-detail", pk=pk)
+
+        if not lead.email:
+            messages.error(request, "Cannot send message: lead has no email.")
+            return redirect("diveops:lead-detail", pk=pk)
+
+        request_id = getattr(request, "request_id", "unknown")
+
+        try:
+            with transaction.atomic():
+                conversation = get_or_create_lead_conversation(lead)
+
+                msg = Message.objects.create(
+                    conversation=conversation,
+                    direction="outbound",
+                    channel="email",
+                    body_text=message_text,
+                    sender_person=None,
+                    status="queued",
+                )
+
+                conversation.touch_last_message(msg)
+
+                logger.info(
+                    "Message created",
+                    extra={
+                        "request_id": request_id,
+                        "message_id": str(msg.pk),
+                        "lead_id": str(lead.pk),
+                        "staff_user": request.user.email,
+                    },
+                )
+
+            # Broadcast via WebSocket for real-time updates
+            from .crm.services import broadcast_chat_message
+            broadcast_chat_message(
+                person_id=str(lead.pk),
+                visitor_id=lead.visitor_id,
+                message_id=str(msg.pk),
+                message_text=message_text,
+                direction="outbound",
+                created_at=msg.created_at.isoformat(),
+            )
+
+            email_sent = send_lead_notification_email(
+                person=lead,
+                message=message_text,
+                staff_user=request.user,
+                message_obj=msg,
+            )
+
+            if email_sent:
+                messages.success(request, f"Message sent to {lead.email}")
+            else:
+                messages.warning(request, "Message saved but email failed to send.")
+
+        except Exception as e:
+            logger.exception(
+                "Failed to send message to lead",
+                extra={"request_id": request_id, "lead_id": str(lead.pk)},
+            )
+            messages.error(request, "Failed to send message. Please try again.")
+
+        return redirect("diveops:lead-detail", pk=pk)
+
+
+class LeadMessagesAPIView(StaffPortalMixin, View):
+    """API endpoint to fetch messages for a lead (for polling)."""
+
+    def get(self, request, pk):
+        from django.http import JsonResponse
+        from django.contrib.contenttypes.models import ContentType
+        from django_parties.models import Person
+        from django_communication.models import Conversation, Message
+
+        lead = get_object_or_404(Person, pk=pk, lead_status__isnull=False, deleted_at__isnull=True)
+
+        person_ct = ContentType.objects.get_for_model(Person)
+        conversation = Conversation.objects.filter(
+            related_content_type=person_ct,
+            related_object_id=str(lead.pk),
+            deleted_at__isnull=True,
+        ).first()
+
+        messages_data = []
+        if conversation:
+            msgs = Message.objects.filter(
+                conversation=conversation,
+            ).order_by("created_at")
+
+            for msg in msgs:
+                messages_data.append({
+                    "id": str(msg.pk),
+                    "direction": msg.direction,
+                    "body": msg.body_text,
+                    "created_at": msg.created_at.isoformat(),
+                })
+
+        return JsonResponse({
+            "lead_id": str(lead.pk),
+            "message_count": len(messages_data),
+            "messages": messages_data,
+        })
 
 
 class ContactsListView(StaffPortalMixin, ListView):

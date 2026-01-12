@@ -21,6 +21,11 @@ weasyprint>=60.0
 redis>=5.0
 django-redis>=5.4
 
+# WebSockets / Real-time
+channels>=4.0
+channels-redis>=4.2
+daphne>=4.0
+
 # Logging
 python-json-logger>=2.0
 

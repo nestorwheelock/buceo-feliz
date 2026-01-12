@@ -305,19 +305,131 @@
 {% endif %}
 
 <script>
-// Auto-scroll to bottom of messages
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('messages-container');
-    if (container) {
-        container.scrollTop = container.scrollHeight;
-    }
-});
+(function() {
+    const conversationId = "{{ conversation.pk }}";
+    const currentPersonId = "{{ current_person.pk }}";
+    const messagesContainer = document.getElementById('messages-container');
+    let socket = null;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 5;
 
-// Close modal when clicking outside
-document.getElementById('invite-modal')?.addEventListener('click', function(e) {
-    if (e.target === this) {
-        this.classList.add('hidden');
+    // WebSocket URL
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = wsProtocol + '//' + window.location.host + '/ws/chat/conversation/' + conversationId + '/';
+
+    function addMessage(msg) {
+        const isMyMessage = msg.sender_person_id === currentPersonId;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex ' + (isMyMessage ? 'justify-end' : 'justify-start');
+
+        const bubble = document.createElement('div');
+        bubble.className = 'max-w-[75%]';
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'rounded-lg px-4 py-2 ' +
+            (isMyMessage ? 'bg-primary-500 text-white' : 'bg-white shadow text-gray-800');
+
+        const text = document.createElement('p');
+        text.className = 'text-sm whitespace-pre-wrap';
+        text.textContent = msg.body || msg.message;
+
+        messageDiv.appendChild(text);
+
+        const meta = document.createElement('div');
+        meta.className = 'mt-1 flex items-center space-x-2 ' + (isMyMessage ? 'justify-end' : 'justify-start');
+
+        const sender = document.createElement('span');
+        sender.className = 'text-xs text-gray-500';
+        sender.textContent = msg.sender_name || 'Member';
+
+        const time = document.createElement('span');
+        time.className = 'text-xs text-gray-400';
+        time.textContent = 'Just now';
+
+        meta.appendChild(sender);
+        meta.appendChild(time);
+
+        bubble.appendChild(messageDiv);
+        bubble.appendChild(meta);
+        wrapper.appendChild(bubble);
+
+        // Animate in
+        wrapper.style.opacity = '0';
+        wrapper.style.transform = 'translateY(10px)';
+        messagesContainer.appendChild(wrapper);
+
+        setTimeout(function() {
+            wrapper.style.transition = 'all 0.3s ease-out';
+            wrapper.style.opacity = '1';
+            wrapper.style.transform = 'translateY(0)';
+        }, 10);
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-});
+
+    function connectWebSocket() {
+        console.log('Connecting WebSocket:', wsUrl);
+        socket = new WebSocket(wsUrl);
+
+        socket.onopen = function() {
+            console.log('WebSocket connected');
+            reconnectAttempts = 0;
+        };
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('WebSocket message:', data);
+
+            if (data.type === 'new_message') {
+                addMessage(data);
+            }
+        };
+
+        socket.onclose = function(event) {
+            console.log('WebSocket closed:', event.code);
+            socket = null;
+
+            if (!document.hidden && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                reconnectAttempts++;
+                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                console.log('Reconnecting in ' + delay + 'ms');
+                setTimeout(connectWebSocket, delay);
+            }
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+    }
+
+    // Auto-scroll to bottom on load
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        connectWebSocket();
+    }
+
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            if (socket) {
+                socket.close();
+                socket = null;
+            }
+        } else {
+            if (!socket && messagesContainer) {
+                reconnectAttempts = 0;
+                connectWebSocket();
+            }
+        }
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('invite-modal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+        }
+    });
+})();
 </script>
 {% endblock %}

@@ -32,7 +32,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile.dev
     container_name: diveops_web
-    command: python manage.py runserver 0.0.0.0:8000
+    command: daphne -b 0.0.0.0 -p 8000 diveops.asgi:application
     volumes:
       - ./src:/app/src
       - ./templates:/app/templates
@@ -46,6 +46,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - PYTHONPATH=/app/src
       - DJANGO_SETTINGS_MODULE=diveops.settings.dev
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
       - DEBUG=True

@@ -1,0 +1,213 @@
+{% extends "portal_ui/base.html" %}
+{% load static %}
+
+{% block title %}Chat - {{ portal_ui.site_name }}{% endblock %}
+
+{% block extra_css %}
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HD Chat">
+<link rel="manifest" href="{% static 'diveops/chat/manifest.json' %}">
+<link rel="apple-touch-icon" href="{% static 'diveops/chat/icon-192.png' %}">
+<style>
+    html, body { height: 100%; overflow: hidden; }
+    .chat-app { height: 100vh; display: flex; flex-direction: column; }
+    .safe-top { padding-top: env(safe-area-inset-top); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="chat-app bg-gray-100" x-data="chatInbox()">
+    <!-- Header -->
+    <header class="bg-blue-600 text-white px-4 py-3 safe-top shadow-lg">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="{% url 'staff:dashboard' %}" class="p-1 hover:bg-blue-700 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                </a>
+                <h1 class="text-xl font-bold">Chats</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button @click="loadConversations()" class="p-2 hover:bg-blue-700 rounded-lg" title="Refresh">
+                    <svg class="w-5 h-5" :class="{ 'animate-spin': loading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex gap-1 mt-3 -mx-1">
+            <button @click="filter = 'awaiting'"
+                    :class="filter === 'awaiting' ? 'bg-white text-blue-600' : 'text-blue-100 hover:bg-blue-700'"
+                    class="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors">
+                Awaiting
+                <span x-show="awaitingCount > 0"
+                      class="ml-1 px-1.5 py-0.5 text-xs rounded-full"
+                      :class="filter === 'awaiting' ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'"
+                      x-text="awaitingCount"></span>
+            </button>
+            <button @click="filter = 'all'"
+                    :class="filter === 'all' ? 'bg-white text-blue-600' : 'text-blue-100 hover:bg-blue-700'"
+                    class="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors">
+                All
+            </button>
+        </div>
+    </header>
+
+    <!-- Search -->
+    <div class="px-4 py-2 bg-white border-b">
+        <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="search"
+                   x-model="search"
+                   placeholder="Search conversations..."
+                   class="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-0 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors">
+        </div>
+    </div>
+
+    <!-- Conversation List -->
+    <div class="flex-1 overflow-y-auto bg-white">
+        <!-- Loading State -->
+        <template x-if="loading && conversations.length === 0">
+            <div class="flex items-center justify-center h-full">
+                <div class="text-center">
+                    <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <p class="mt-2 text-gray-500">Loading chats...</p>
+                </div>
+            </div>
+        </template>
+
+        <!-- Empty State -->
+        <template x-if="!loading && filteredConversations.length === 0">
+            <div class="flex items-center justify-center h-full">
+                <div class="text-center px-4">
+                    <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                    </div>
+                    <p class="text-gray-500" x-text="filter === 'awaiting' ? 'No messages awaiting reply' : 'No conversations yet'"></p>
+                </div>
+            </div>
+        </template>
+
+        <!-- Conversations -->
+        <template x-for="conv in filteredConversations" :key="conv.person_id">
+            <a :href="'/staff/chat/' + conv.person_id + '/'"
+               class="flex items-center gap-3 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                <!-- Avatar -->
+                <div class="relative flex-shrink-0">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold"
+                         :class="conv.needs_reply ? 'bg-blue-600' : 'bg-gray-400'"
+                         x-text="conv.initials"></div>
+                    <div x-show="conv.needs_reply"
+                         class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
+                </div>
+
+                <!-- Content -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <span class="font-semibold text-gray-900 truncate"
+                              :class="{ 'text-blue-600': conv.needs_reply }"
+                              x-text="conv.name"></span>
+                        <span class="text-xs text-gray-500 flex-shrink-0 ml-2" x-text="conv.last_message_time"></span>
+                    </div>
+                    <p class="text-sm text-gray-600 truncate" x-text="conv.last_message || 'No messages yet'"></p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-xs px-2 py-0.5 rounded-full"
+                              :class="{
+                                  'bg-blue-100 text-blue-700': conv.lead_status === 'new',
+                                  'bg-yellow-100 text-yellow-700': conv.lead_status === 'contacted',
+                                  'bg-green-100 text-green-700': conv.lead_status === 'qualified',
+                                  'bg-purple-100 text-purple-700': conv.lead_status === 'converted',
+                                  'bg-gray-100 text-gray-700': !conv.lead_status
+                              }"
+                              x-text="conv.lead_status || 'contact'"></span>
+                    </div>
+                </div>
+
+                <!-- Arrow -->
+                <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </template>
+    </div>
+
+    <!-- Bottom Safe Area -->
+    <div class="safe-bottom bg-white"></div>
+</div>
+
+<script>
+function chatInbox() {
+    return {
+        loading: true,
+        conversations: [],
+        filter: 'awaiting',
+        search: '',
+
+        init() {
+            this.loadConversations();
+            // Auto-refresh every 30 seconds
+            setInterval(() => this.loadConversations(), 30000);
+        },
+
+        get awaitingCount() {
+            return this.conversations.filter(c => c.needs_reply).length;
+        },
+
+        get filteredConversations() {
+            let result = this.conversations;
+
+            // Filter by tab
+            if (this.filter === 'awaiting') {
+                result = result.filter(c => c.needs_reply);
+            }
+
+            // Filter by search
+            if (this.search) {
+                const q = this.search.toLowerCase();
+                result = result.filter(c =>
+                    c.name.toLowerCase().includes(q) ||
+                    c.email.toLowerCase().includes(q) ||
+                    (c.last_message && c.last_message.toLowerCase().includes(q))
+                );
+            }
+
+            return result;
+        },
+
+        async loadConversations() {
+            this.loading = true;
+            try {
+                const resp = await fetch('/staff/api/chat/conversations/');
+                if (!resp.ok) throw new Error('Failed to load');
+                const data = await resp.json();
+                this.conversations = data.conversations || [];
+            } catch (err) {
+                console.error('Failed to load conversations:', err);
+            } finally {
+                this.loading = false;
+            }
+        }
+    }
+}
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/diveops/chat/sw.js')
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.log('SW registration failed:', err));
+}
+</script>
+{% endblock %}

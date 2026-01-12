@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from . import document_views, help_views, staff_views
+from . import chat_api_views, document_views, help_views, staff_views
 
 app_name = "diveops"
 
@@ -14,6 +14,8 @@ urlpatterns = [
     path("crm/leads/<uuid:pk>/", staff_views.LeadDetailView.as_view(), name="lead-detail"),
     path("crm/leads/<uuid:pk>/status/", staff_views.LeadStatusUpdateView.as_view(), name="lead-status-update"),
     path("crm/leads/<uuid:pk>/notes/", staff_views.LeadAddNoteView.as_view(), name="lead-add-note"),
+    path("crm/leads/<uuid:pk>/send-message/", staff_views.LeadSendMessageView.as_view(), name="lead-send-message"),
+    path("crm/leads/<uuid:pk>/messages/", staff_views.LeadMessagesAPIView.as_view(), name="lead-messages-api"),
     path("crm/leads/<uuid:pk>/convert/", staff_views.ConvertLeadToDiverView.as_view(), name="lead-convert"),
     # CRM - Contacts (non-diver persons)
     path("crm/contacts/", staff_views.ContactsListView.as_view(), name="contacts-list"),
@@ -29,6 +31,12 @@ urlpatterns = [
     path("crm/inbox/<uuid:conversation_id>/remove/", staff_views.StaffRemoveFromConversationView.as_view(), name="crm-remove"),
     path("crm/inbox/new/", staff_views.StaffNewConversationView.as_view(), name="crm-new-conversation"),
     path("api/customers/search/", staff_views.CustomerSearchAPIView.as_view(), name="api-customer-search"),
+    # Staff Chat PWA (mobile-first)
+    path("chat/", chat_api_views.ChatInboxView.as_view(), name="chat-inbox"),
+    path("chat/<uuid:person_id>/", chat_api_views.ChatThreadView.as_view(), name="chat-thread"),
+    # Staff Chat Widget API
+    path("api/chat/conversations/", chat_api_views.StaffChatConversationsAPIView.as_view(), name="api-chat-conversations"),
+    path("api/chat/conversations/<uuid:person_id>/messages/", chat_api_views.StaffChatMessagesAPIView.as_view(), name="api-chat-messages"),
     path("api/canned-responses/", staff_views.CannedResponseListAPIView.as_view(), name="api-canned-responses"),
     path("api/canned-responses/<uuid:pk>/render/", staff_views.CannedResponseRenderAPIView.as_view(), name="api-canned-response-render"),
     path("api/conversation/<uuid:conversation_id>/send-agreement/", staff_views.ConversationSendAgreementAPIView.as_view(), name="api-conversation-send-agreement"),

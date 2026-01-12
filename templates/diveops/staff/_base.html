@@ -1,6 +1,11 @@
 {% extends "portal_ui/base_staff.html" %}
 {% load portal_ui_tags %}
 
+{% block extra_js %}
+{{ block.super }}
+{% include "diveops/components/staff_chat_widget.html" %}
+{% endblock %}
+
 {% block title %}{{ block.super }} - Dive Operations{% endblock %}
 
 {% block header_actions %}

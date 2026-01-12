@@ -1024,6 +1024,17 @@ class PublicChatAPIView(View):
             direction=DIRECTION_INBOUND,
         )
 
+        # Broadcast via WebSocket for real-time updates
+        from .crm.services import broadcast_chat_message
+        broadcast_chat_message(
+            person_id=str(person.pk),
+            visitor_id=visitor_id,
+            message_id=str(message.pk),
+            message_text=message_text,
+            direction="inbound",
+            created_at=message.created_at.isoformat(),
+        )
+
         response = JsonResponse({
             "status": "success",
             "message_id": str(message.pk),

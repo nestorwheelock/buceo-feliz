@@ -802,15 +802,26 @@ class CustomerConversationDetailView(CustomerPortalMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         """Handle sending a message in the conversation."""
         from django_communication.services import send_in_conversation
+        from .crm.services import broadcast_conversation_message
 
         conversation, person = self.get_conversation()
         body_text = request.POST.get("message", "").strip()
 
         if body_text:
-            send_in_conversation(
+            msg = send_in_conversation(
                 conversation=conversation,
                 sender_person=person,
                 body_text=body_text,
+            )
+
+            # Broadcast via WebSocket for real-time updates
+            broadcast_conversation_message(
+                conversation_id=str(conversation.pk),
+                message_id=str(msg.pk),
+                message_text=body_text,
+                sender_person_id=str(person.pk),
+                sender_name=person.first_name,
+                created_at=msg.created_at.isoformat(),
             )
 
         return redirect("portal:conversation", conversation_id=conversation.pk)
@@ -823,6 +834,7 @@ class CustomerSendMessageView(CustomerPortalMixin, View):
         """Send a message via POST."""
         from django_communication.models import Conversation
         from django_communication.services import send_in_conversation
+        from .crm.services import broadcast_conversation_message
 
         diver = get_current_diver(request.user)
         if not diver or not diver.person:
@@ -837,10 +849,20 @@ class CustomerSendMessageView(CustomerPortalMixin, View):
         body_text = request.POST.get("message", "").strip()
 
         if body_text:
-            send_in_conversation(
+            msg = send_in_conversation(
                 conversation=conversation,
                 sender_person=diver.person,
                 body_text=body_text,
+            )
+
+            # Broadcast via WebSocket for real-time updates
+            broadcast_conversation_message(
+                conversation_id=str(conversation.pk),
+                message_id=str(msg.pk),
+                message_text=body_text,
+                sender_person_id=str(diver.person.pk),
+                sender_name=diver.person.first_name,
+                created_at=msg.created_at.isoformat(),
             )
 
         return redirect("portal:conversation", conversation_id=conversation.pk)

@@ -179,6 +179,52 @@ def get_compatible_sites(excursion_type: ExcursionType | None = None):
     return sites.select_related("min_certification_level", "place").order_by("name")
 
 
+def _auto_convert_lead_on_booking(person, actor=None):
+    """Auto-convert lead to 'converted' status on first booking.
+
+    This is a safety net that ensures lead_status is properly updated
+    when a booking is made. It's idempotent - safe to call multiple times.
+
+    Args:
+        person: The Person record (diver's linked Person)
+        actor: The user making the booking (optional, for audit trail)
+    """
+    from django_parties.models import Person, LeadStatusEvent
+
+    # Only process if person has a lead status (is or was a lead)
+    if person.lead_status is None:
+        return
+
+    # Already converted - nothing to do
+    if person.lead_status == "converted":
+        return
+
+    # Update to converted status
+    old_status = person.lead_status
+    person.lead_status = "converted"
+    person.lead_converted_at = timezone.now()
+    person.save(update_fields=["lead_status", "lead_converted_at", "updated_at"])
+
+    # Record the status change event
+    LeadStatusEvent.objects.create(
+        person=person,
+        from_status=old_status,
+        to_status="converted",
+        actor=actor,
+        note="Auto-converted on first booking",
+    )
+
+    logger.info(
+        "Auto-converted lead to diver on booking",
+        extra={
+            "person_id": str(person.pk),
+            "old_status": old_status,
+            "new_status": "converted",
+            "actor": actor.email if actor else None,
+        },
+    )
+
+
 @transaction.atomic
 def book_excursion(
     excursion: Excursion,
@@ -276,6 +322,10 @@ def book_excursion(
             ) from e
         # Re-raise unknown IntegrityErrors
         raise
+
+    # Auto-convert lead to diver on first booking
+    # This is idempotent and safe to call multiple times
+    _auto_convert_lead_on_booking(diver.person, booked_by)
 
     # Create waiver agreement if requested
     if create_agreement:

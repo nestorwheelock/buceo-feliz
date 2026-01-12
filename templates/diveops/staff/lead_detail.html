@@ -104,6 +104,80 @@
                 </form>
             </div>
 
+            <!-- Chat Messages Section -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Chat Messages</h2>
+                    {% if chat_messages %}
+                    <span class="text-sm text-gray-500">{{ chat_messages|length }} message{{ chat_messages|length|pluralize }}</span>
+                    {% endif %}
+                </div>
+
+                {% if chat_messages %}
+                <div class="space-y-3 max-h-96 overflow-y-auto border rounded-lg p-4 bg-gray-50" id="chat-messages">
+                    {% for msg in chat_messages %}
+                    <div class="flex {% if msg.direction == 'outbound' %}justify-end{% endif %}">
+                        <div class="max-w-[80%] {% if msg.direction == 'inbound' %}bg-white border{% else %}bg-blue-600 text-white{% endif %} rounded-lg px-4 py-2 shadow-sm">
+                            <div class="text-xs {% if msg.direction == 'outbound' %}text-blue-100{% else %}text-gray-500{% endif %} mb-1">
+                                {% if msg.direction == 'inbound' %}
+                                    {{ lead.first_name }} &middot; {{ msg.created_at|timesince }} ago
+                                {% else %}
+                                    Staff &middot; {{ msg.created_at|timesince }} ago
+                                    {% if msg.status == 'failed' %}<span class="text-red-300 ml-2">Failed to send</span>{% endif %}
+                                {% endif %}
+                            </div>
+                            <div class="{% if msg.direction == 'outbound' %}text-white{% else %}text-gray-800{% endif %} whitespace-pre-wrap">{{ msg.body_text }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                    <p class="mt-2">No chat messages yet.</p>
+                    <p class="text-sm mt-1">Messages from the website chat will appear here.</p>
+                </div>
+                {% endif %}
+
+                <!-- Reply Form -->
+                {% if lead.email %}
+                <form method="post" action="{% url 'diveops:lead-send-message' pk=lead.pk %}"
+                      class="mt-4" id="reply-form">
+                    {% csrf_token %}
+                    <div class="flex gap-2">
+                        <textarea name="message" rows="2" required minlength="1"
+                                  class="flex-1 border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Type your reply... (will also send email)"></textarea>
+                        <button type="submit"
+                                class="self-end bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                                id="send-btn">
+                            Send
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Reply will be emailed to {{ lead.email }}
+                    </p>
+                </form>
+                <script>
+                document.getElementById('reply-form').addEventListener('submit', function(e) {
+                    var btn = document.getElementById('send-btn');
+                    if (btn.disabled) { e.preventDefault(); return; }
+                    btn.disabled = true;
+                    btn.textContent = 'Sending...';
+                });
+                </script>
+                {% else %}
+                <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
+                    <svg class="inline-block w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    Cannot reply: Lead has no email address on file.
+                </div>
+                {% endif %}
+            </div>
+
             <!-- Activity Timeline -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Activity Timeline</h2>
@@ -307,4 +381,121 @@
         </div>
     </div>
 </div>
+
+<!-- Chat WebSocket Script -->
+<script>
+(function() {
+    const leadId = "{{ lead.pk }}";
+    const messagesContainer = document.getElementById('chat-messages');
+    let lastMessageCount = {{ chat_messages|length|default:0 }};
+    let socket = null;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 5;
+
+    // WebSocket URL
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = wsProtocol + '//' + window.location.host + '/ws/chat/lead/' + leadId + '/';
+
+    function addMessage(msg) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex ' + (msg.direction === 'outbound' ? 'justify-end' : '');
+
+        const bubble = document.createElement('div');
+        bubble.className = 'max-w-[80%] rounded-lg px-4 py-2 shadow-sm ' +
+            (msg.direction === 'inbound' ? 'bg-white border' : 'bg-blue-600 text-white');
+
+        const meta = document.createElement('div');
+        meta.className = 'text-xs mb-1 ' + (msg.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500');
+        meta.textContent = (msg.direction === 'inbound' ? '{{ lead.first_name }}' : 'Staff') + ' · just now';
+
+        const body = document.createElement('div');
+        body.className = 'whitespace-pre-wrap ' + (msg.direction === 'outbound' ? 'text-white' : 'text-gray-800');
+        body.textContent = msg.body || msg.message;
+
+        bubble.appendChild(meta);
+        bubble.appendChild(body);
+        wrapper.appendChild(bubble);
+
+        // Animate in
+        wrapper.style.opacity = '0';
+        wrapper.style.transform = 'translateY(10px)';
+        messagesContainer.appendChild(wrapper);
+
+        setTimeout(function() {
+            wrapper.style.transition = 'all 0.3s ease-out';
+            wrapper.style.opacity = '1';
+            wrapper.style.transform = 'translateY(0)';
+        }, 10);
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // Update message count in header
+        lastMessageCount++;
+        var countSpan = document.querySelector('.text-sm.text-gray-500');
+        if (countSpan && countSpan.textContent.includes('message')) {
+            countSpan.textContent = lastMessageCount + ' message' + (lastMessageCount !== 1 ? 's' : '');
+        }
+    }
+
+    function connectWebSocket() {
+        console.log('Connecting WebSocket:', wsUrl);
+        socket = new WebSocket(wsUrl);
+
+        socket.onopen = function() {
+            console.log('WebSocket connected');
+            reconnectAttempts = 0;
+        };
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('WebSocket message:', data);
+
+            if (data.type === 'new_message') {
+                // New message received - add to chat
+                addMessage({
+                    direction: data.direction,
+                    body: data.message
+                });
+            }
+        };
+
+        socket.onclose = function(event) {
+            console.log('WebSocket closed:', event.code);
+            socket = null;
+
+            // Reconnect if page is visible and we haven't exceeded attempts
+            if (!document.hidden && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                reconnectAttempts++;
+                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                console.log('Reconnecting in ' + delay + 'ms (attempt ' + reconnectAttempts + ')');
+                setTimeout(connectWebSocket, delay);
+            }
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+    }
+
+    // Connect WebSocket if there's a messages container
+    if (messagesContainer) {
+        connectWebSocket();
+    }
+
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            if (socket) {
+                socket.close();
+                socket = null;
+            }
+        } else {
+            if (!socket && messagesContainer) {
+                reconnectAttempts = 0;
+                connectWebSocket();
+            }
+        }
+    });
+})();
+</script>
 {% endblock %}
