@@ -16,7 +16,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 
     # User impersonation (staff only)
-    path("impersonate/<uuid:user_id>/", ImpersonateStartView.as_view(), name="impersonate-start"),
+    path("impersonate/<int:user_id>/", ImpersonateStartView.as_view(), name="impersonate-start"),
     path("impersonate/stop/", ImpersonateStopView.as_view(), name="impersonate-stop"),
 
     # Authentication
