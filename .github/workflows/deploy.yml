@@ -103,7 +103,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "docker-compose.small.yml,docker/nginx/nginx.small.conf"
+          source: "docker-compose.small.yml,docker/nginx/nginx.small.conf,docker/nginx/nginx.http-only.conf,scripts/init-ssl.sh"
           target: /opt/diveops/
           strip_components: 0
 
@@ -119,7 +119,22 @@ jobs:
 
             # Rename config files
             cp docker-compose.small.yml docker-compose.prod.yml
-            cp docker/nginx/nginx.small.conf nginx.conf
+            chmod +x scripts/init-ssl.sh
+
+            # Check if SSL certificates exist
+            if docker volume inspect diveops_certs_data >/dev/null 2>&1; then
+              # Check if certs are inside the volume
+              if docker run --rm -v diveops_certs_data:/certs alpine test -f /certs/live/happydiving.mx/fullchain.pem 2>/dev/null; then
+                echo "SSL certificates found, using HTTPS config"
+                cp docker/nginx/nginx.small.conf nginx.conf
+              else
+                echo "SSL certificates not found, using HTTP-only config"
+                cp docker/nginx/nginx.http-only.conf nginx.conf
+              fi
+            else
+              echo "SSL volume not found, using HTTP-only config"
+              cp docker/nginx/nginx.http-only.conf nginx.conf
+            fi
 
             # Stop old containers, start new ones
             docker compose -f docker-compose.prod.yml up -d --force-recreate

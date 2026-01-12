@@ -106,12 +106,24 @@ services:
       - static_data:/app/staticfiles:ro
       - media_data:/app/media:ro
       - certs_data:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
     deploy:
       resources:
         limits:
           memory: 64M
     depends_on:
       - web
+    restart: unless-stopped
+    networks:
+      - diveops_network
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: diveops_certbot
+    volumes:
+      - certs_data:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     restart: unless-stopped
     networks:
       - diveops_network
@@ -123,6 +135,7 @@ volumes:
   media_data:
   logs_data:
   certs_data:
+  certbot_www:
 
 networks:
   diveops_network:
