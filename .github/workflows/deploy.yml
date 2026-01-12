@@ -113,6 +113,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 10m
           script: |
             cd /opt/diveops
 
@@ -123,17 +124,27 @@ jobs:
             # Stop old containers, start new ones
             docker compose -f docker-compose.prod.yml up -d --force-recreate
 
-            # Wait for db to be healthy
-            sleep 15
+            # Wait for web to be healthy (up to 60 seconds)
+            echo "Waiting for web container to be healthy..."
+            for i in {1..12}; do
+              if docker compose -f docker-compose.prod.yml exec -T web python -c "import django; django.setup()" 2>/dev/null; then
+                echo "Web container is ready!"
+                break
+              fi
+              echo "Waiting... ($i/12)"
+              sleep 5
+            done
 
             # Run migrations
             docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput || true
 
-            # Collect static files
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput || true
+            # Collect static files (use --clear to avoid permission issues)
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput --clear || true
 
             # Clean up old images
             docker image prune -f
 
-            # Show status
+            # Show status and logs
             docker compose -f docker-compose.prod.yml ps
+            echo "=== Recent web logs ==="
+            docker compose -f docker-compose.prod.yml logs --tail=20 web
