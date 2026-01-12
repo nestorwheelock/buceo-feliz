@@ -37,36 +37,46 @@ PRIMITIVES_APPS = [
     "django_basemodels",
     "django_singleton",
     "django_sequence",
-    # Identity
-    "django_parties",
+    "django_money",
     # Infrastructure
+    "django_decisioning",
     "django_audit_log",
     "django_communication",
+    # Identity
+    "django_parties",
+    "django_modules",
+    "django_rbac",
     # Domain
     "django_catalog",
     "django_encounters",
+    "django_worklog",
     "django_ledger",
     # Content
     "django_documents",
     "django_agreements",
     "django_questionnaires",
+    "django_notes",
     "django_cms_core",
-    # Value Objects
-    "django_money",
-    # UI
+    # Geo
+    "django_geo",
+]
+
+# Third-party UI
+THIRD_PARTY_APPS = [
     "django_portal_ui",
 ]
 
 # Local apps
 LOCAL_APPS = [
     "diveops.core",
+    "diveops.profile",
     "diveops.pricing",
     "diveops.invoicing",
     "diveops.store",
     "diveops.operations",
 ]
 
-INSTALLED_APPS = DJANGO_APPS + PRIMITIVES_APPS + LOCAL_APPS
+INSTALLED_APPS = DJANGO_APPS + PRIMITIVES_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -93,10 +103,10 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "django_portal_ui.context_processors.portal_ui",
                 "diveops.operations.context_processors.diveops_context",
                 "diveops.core.context_processors.impersonation_context",
                 "diveops.store.context_processors.cart_context",
+                "django_portal_ui.context_processors.portal_ui",
             ],
         },
     },
@@ -150,6 +160,11 @@ LOGIN_REDIRECT_URL = "/portal/"
 LOGOUT_REDIRECT_URL = "/"
 LOGIN_URL = "/accounts/login/"
 
+# Authentication backends - allow email login
+AUTHENTICATION_BACKENDS = [
+    "diveops.core.backends.EmailBackend",
+]
+
 # Internationalization
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
@@ -174,11 +189,237 @@ DIVE_SHOP_TIMEZONE = os.environ.get("DIVE_SHOP_TIMEZONE", "America/New_York")
 DIVE_SHOP_LATITUDE = float(os.environ.get("DIVE_SHOP_LATITUDE", "25.7617"))
 DIVE_SHOP_LONGITUDE = float(os.environ.get("DIVE_SHOP_LONGITUDE", "-80.1918"))
 
+# Site configuration
+SITE_NAME = DIVE_SHOP_NAME
+STAFF_PORTAL_TITLE = f"{DIVE_SHOP_NAME} Staff"
+CUSTOMER_PORTAL_TITLE = f"{DIVE_SHOP_NAME} Portal"
+
 # Portal UI configuration
 PORTAL_UI = {
     "SITE_NAME": DIVE_SHOP_NAME,
-    "STAFF_PORTAL_TITLE": f"{DIVE_SHOP_NAME} Staff",
-    "CUSTOMER_PORTAL_TITLE": f"{DIVE_SHOP_NAME} Portal",
+    "PORTAL_NAV": [
+        {
+            "section": "Main",
+            "label": "Dashboard",
+            "url": "portal:dashboard",
+            "icon": "home",
+        },
+        {
+            "section": "Main",
+            "label": "My Orders",
+            "url": "portal:orders",
+            "icon": "receipt",
+        },
+        {
+            "section": "Main",
+            "label": "Messages",
+            "url": "portal:messages",
+            "icon": "chat-bubble-left-right",
+        },
+        {
+            "section": "Learning",
+            "label": "My Courseware",
+            "url": "portal:content",
+            "url_kwargs": {"path": "open-water-courseware"},
+            "icon": "book-open",
+        },
+        {
+            "section": "Learning",
+            "label": "Dive Site Guides",
+            "url": "portal:content",
+            "url_kwargs": {"path": "dive-sites"},
+            "icon": "map-pin",
+        },
+        {
+            "section": "Shop",
+            "label": "Browse Store",
+            "url": "store:list",
+            "icon": "gift",
+        },
+        {
+            "section": "Shop",
+            "label": "My Cart",
+            "url": "store:cart",
+            "icon": "shopping-cart",
+        },
+        {
+            "section": "Help",
+            "label": "Help Center",
+            "url": "portal:content",
+            "url_kwargs": {"path": "help"},
+            "icon": "help-circle",
+        },
+    ],
+    "STAFF_NAV": [
+        {
+            "section": "Dive Operations",
+            "label": "Excursions",
+            "url": "diveops:excursion-list",
+            "icon": "anchor",
+        },
+        {
+            "section": "Dive Operations",
+            "label": "Divers",
+            "url": "diveops:diver-list",
+            "icon": "users",
+        },
+        {
+            "section": "CRM",
+            "label": "Inbox",
+            "url": "diveops:crm-inbox",
+            "icon": "inbox",
+        },
+        {
+            "section": "CRM",
+            "label": "Leads",
+            "url": "diveops:lead-list",
+            "icon": "user-plus",
+        },
+        {
+            "section": "CMS",
+            "label": "Pages",
+            "url": "diveops:cms-page-list",
+            "icon": "file-text",
+        },
+        {
+            "section": "CMS",
+            "label": "Posts",
+            "url": "diveops:blog-post-list",
+            "icon": "edit-3",
+        },
+        {
+            "section": "CMS",
+            "label": "Categories",
+            "url": "diveops:blog-category-list",
+            "icon": "folder",
+        },
+        {
+            "section": "CMS",
+            "label": "Redirects",
+            "url": "diveops:cms-redirect-list",
+            "icon": "arrow-right",
+        },
+        {
+            "section": "CMS",
+            "label": "Settings",
+            "url": "diveops:cms-settings",
+            "icon": "settings",
+        },
+        {
+            "section": "Dive Operations",
+            "label": "Dive Sites",
+            "url": "diveops:staff-site-list",
+            "icon": "map-pin",
+        },
+        {
+            "section": "Dive Operations",
+            "label": "Protected Areas",
+            "url": "diveops:protected-area-list",
+            "icon": "shield",
+        },
+        {
+            "section": "Dive Operations",
+            "label": "Agreements",
+            "url": "diveops:signable-agreement-list",
+            "icon": "file-text",
+        },
+        {
+            "section": "Dive Operations",
+            "label": "Medical Questionnaires",
+            "url": "diveops:medical-list",
+            "icon": "heart",
+        },
+        {
+            "section": "Planning",
+            "label": "Dive Plans",
+            "url": "diveops:dive-plan-list",
+            "icon": "compass",
+        },
+        {
+            "section": "Planning",
+            "label": "Dive Logs",
+            "url": "diveops:dive-log-list",
+            "icon": "book-open",
+        },
+        {
+            "section": "System",
+            "label": "Documents",
+            "url": "diveops:document-browser",
+            "icon": "folder",
+        },
+        {
+            "section": "System",
+            "label": "Media",
+            "url": "diveops:media-library",
+            "icon": "image",
+        },
+        {
+            "section": "System",
+            "label": "Audit Log",
+            "url": "diveops:audit-log",
+            "icon": "file-text",
+        },
+        {
+            "section": "Configuration",
+            "label": "Excursion Types",
+            "url": "diveops:excursion-type-list",
+            "icon": "package",
+        },
+        {
+            "section": "Configuration",
+            "label": "Agreement Types",
+            "url": "diveops:agreement-template-list",
+            "icon": "clipboard",
+        },
+        {
+            "section": "Configuration",
+            "label": "Catalog Items",
+            "url": "diveops:catalog-item-list",
+            "icon": "tag",
+        },
+        {
+            "section": "Configuration",
+            "label": "AI Settings",
+            "url": "diveops:ai-settings",
+            "icon": "cpu",
+        },
+        {
+            "section": "Configuration",
+            "label": "Communication Settings",
+            "url": "diveops:communication-settings",
+            "icon": "mail",
+        },
+        {
+            "section": "Configuration",
+            "label": "Message Templates",
+            "url": "diveops:message-template-list",
+            "icon": "file-text",
+        },
+        {
+            "section": "Configuration",
+            "label": "Canned Responses",
+            "url": "diveops:canned-response-list",
+            "icon": "document-text",
+        },
+        {
+            "section": "Finance",
+            "label": "Chart of Accounts",
+            "url": "diveops:account-list",
+            "icon": "book",
+        },
+        {
+            "section": "Finance",
+            "label": "Payables",
+            "url": "diveops:payables-summary",
+            "icon": "credit-card",
+        },
+        {
+            "section": "Help",
+            "label": "Help Center",
+            "url": "diveops:help-center",
+            "icon": "help-circle",
+        },
+    ],
 }
 
 # Logging configuration

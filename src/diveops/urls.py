@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from diveops.core.impersonation import ImpersonateStartView, ImpersonateStopView
 from diveops.core.views import health_check, index
 
 urlpatterns = [
@@ -14,11 +15,18 @@ urlpatterns = [
     # Django admin
     path("admin/", admin.site.urls),
 
+    # User impersonation (staff only)
+    path("impersonate/<uuid:user_id>/", ImpersonateStartView.as_view(), name="impersonate-start"),
+    path("impersonate/stop/", ImpersonateStopView.as_view(), name="impersonate-stop"),
+
     # Authentication
     path("accounts/", include("django.contrib.auth.urls")),
 
+    # User profile
+    path("profile/", include("diveops.profile.urls", namespace="profile")),
+
     # Staff portal
-    path("staff/diveops/", include("diveops.operations.urls.staff", namespace="staff")),
+    path("staff/", include("diveops.operations.urls.staff", namespace="diveops")),
 
     # Customer portal
     path("portal/", include("diveops.operations.urls.customer", namespace="portal")),

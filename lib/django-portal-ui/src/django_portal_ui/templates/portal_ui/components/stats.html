@@ -1,0 +1,18 @@
+{% load portal_ui_tags %}
+{# Usage: {% include "portal_ui/components/stats.html" with stats=stats_list %} #}
+{# stats_list = [{'label': 'Total', 'value': 42, 'icon': 'users', 'color': 'blue'}, ...] #}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    {% for stat in stats %}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 p-2 rounded-lg bg-{{ stat.color|default:'primary' }}-100">
+                {% icon stat.icon|default:"activity" "w-6 h-6 text-"|add:stat.color|default:"primary"|add:"-600" %}
+            </div>
+            <div class="ml-4">
+                <p class="text-2xl font-bold text-gray-900">{{ stat.value }}</p>
+                <p class="text-sm text-gray-500">{{ stat.label }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>

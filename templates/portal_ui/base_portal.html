@@ -1,0 +1,370 @@
+{% extends "portal_ui/base.html" %}
+{% load static portal_ui_tags %}
+
+{% block body %}
+{% if is_impersonating %}
+<!-- Impersonation Banner -->
+<div class="bg-amber-500 text-amber-950 px-4 py-2 text-center text-sm font-medium sticky top-0 z-50">
+    <span class="inline-flex items-center">
+        {% icon "eye" "w-4 h-4 mr-2" %}
+        Viewing as <strong class="mx-1">{{ user.email }}</strong>
+        (logged in as {{ original_user.email }})
+        <form action="{% url 'impersonate-stop' %}" method="post" class="inline ml-4">
+            {% csrf_token %}
+            <button type="submit" class="underline hover:no-underline font-semibold">
+                Stop Impersonating
+            </button>
+        </form>
+    </span>
+</div>
+{% endif %}
+
+<div class="min-h-full" x-data="{ sidebarOpen: false }">
+    <!-- Mobile sidebar overlay -->
+    <div x-show="sidebarOpen" x-cloak
+         class="fixed inset-0 z-40 lg:hidden"
+         @click="sidebarOpen = false">
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-75"></div>
+    </div>
+
+    <!-- Sidebar -->
+    {% include "portal_ui/components/portal_sidebar.html" %}
+
+    <!-- Main content -->
+    <div class="lg:pl-64 flex flex-col min-h-screen">
+        <!-- Top bar -->
+        <header class="bg-white shadow-sm border-b border-gray-200 sticky {% if is_impersonating %}top-10{% else %}top-0{% endif %} z-30">
+            <div class="flex items-center justify-between h-16 px-4">
+                <!-- Mobile menu button -->
+                <button @click="sidebarOpen = true; document.getElementById('portal-sidebar').classList.remove('-translate-x-full')" class="lg:hidden text-gray-500 hover:text-gray-700">
+                    {% icon "menu" "w-6 h-6" %}
+                </button>
+
+                <!-- Page title -->
+                <h1 class="text-lg font-semibold text-gray-800 lg:ml-0">
+                    {% block page_title %}Dashboard{% endblock %}
+                </h1>
+
+                <!-- Right side actions -->
+                <div class="flex items-center space-x-4">
+                    {% block header_actions %}{% endblock %}
+
+                    <!-- Shopping Cart -->
+                    <a href="{% url 'store:cart' %}" class="relative p-2 text-gray-500 hover:text-primary-600" title="Shopping Cart">
+                        {% icon "shopping-cart" "w-6 h-6" %}
+                        {% if cart_item_count > 0 %}
+                        <span class="absolute -top-1 -right-1 bg-primary-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                            {{ cart_item_count }}
+                        </span>
+                        {% endif %}
+                    </a>
+
+                    <!-- Profile dropdown -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center text-gray-600 hover:text-primary-500">
+                            <div class="w-8 h-8 rounded-full {% if is_impersonating %}bg-amber-100 text-amber-600{% else %}bg-primary-100 text-primary-600{% endif %} flex items-center justify-center font-medium">
+                                {% if user.email %}{{ user.email|slice:":1"|upper }}{% else %}?{% endif %}
+                            </div>
+                            <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <div x-show="open" x-cloak @click.away="open = false"
+                             class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-100">
+                            <div class="px-4 py-2 border-b border-gray-100">
+                                <p class="text-sm font-medium text-gray-900 truncate">{{ user.email }}</p>
+                                {% if is_impersonating %}
+                                <p class="text-xs text-amber-600">Impersonating</p>
+                                {% endif %}
+                            </div>
+                            {% if is_impersonating %}
+                            <form action="{% url 'impersonate-stop' %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="w-full text-left block px-4 py-2 text-sm text-amber-700 hover:bg-amber-50">
+                                    {% icon "x-circle" "w-4 h-4 inline mr-2" %} Stop Impersonating
+                                </button>
+                            </form>
+                            {% else %}
+                            {% if user.is_staff %}
+                            <a href="{{ portal_ui.staff_prefix }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                {% icon "briefcase" "w-4 h-4 inline mr-2" %} Staff Portal
+                            </a>
+                            {% endif %}
+                            {% if user.is_superuser %}
+                            <a href="{{ portal_ui.superadmin_prefix }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                {% icon "shield" "w-4 h-4 inline mr-2" %} Admin
+                            </a>
+                            {% endif %}
+                            {% endif %}
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                {% icon "user" "w-4 h-4 inline mr-2" %} My Profile
+                            </a>
+                            <a href="{% url 'portal:dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                {% icon "home" "w-4 h-4 inline mr-2" %} Dashboard
+                            </a>
+                            <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                {% icon "log-out" "w-4 h-4 inline mr-2" %} Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Flash messages -->
+        {% if messages %}
+        <div class="px-4 py-2">
+            {% for message in messages %}
+            <div class="mb-2 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Page content -->
+        <main class="flex-1 p-4 lg:p-6">
+            {% block content %}{% endblock %}
+            {% block portal_content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        {% if portal_ui.show_footer %}
+        <footer class="bg-white border-t border-gray-200 py-4 px-6 text-center text-sm text-gray-500">
+            {% block footer %}
+            {{ portal_ui.footer_text|default:"Powered by django-portal-ui" }}
+            {% endblock %}
+        </footer>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function closePortalSidebar() {
+    document.getElementById('portal-sidebar').classList.add('-translate-x-full');
+    document.getElementById('portal-sidebar-overlay').classList.add('hidden');
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closePortalSidebar();
+    }
+});
+
+// ==========================================
+// PWA Push Notification Registration
+// ==========================================
+
+// Add manifest link dynamically
+(function() {
+    if (!document.querySelector('link[rel="manifest"]')) {
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = '/static/manifest.json';
+        document.head.appendChild(manifestLink);
+    }
+    // Add theme color meta if not present
+    if (!document.querySelector('meta[name="theme-color"]')) {
+        const themeColor = document.createElement('meta');
+        themeColor.name = 'theme-color';
+        themeColor.content = '#2563eb';
+        document.head.appendChild(themeColor);
+    }
+})();
+
+// Register service worker and handle push subscription
+if ('serviceWorker' in navigator && 'PushManager' in window) {
+    navigator.serviceWorker.register('/static/sw.js').then(function(registration) {
+        console.log('Service Worker registered with scope:', registration.scope);
+
+        // Check if push is already subscribed
+        registration.pushManager.getSubscription().then(function(subscription) {
+            if (subscription) {
+                window.pushSubscription = subscription;
+                console.log('Already subscribed to push');
+            }
+        });
+    }).catch(function(error) {
+        console.warn('Service Worker registration failed:', error);
+    });
+}
+
+// Convert VAPID key from base64 to Uint8Array
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+// Subscribe to push notifications
+async function subscribeToPush() {
+    try {
+        const registration = await navigator.serviceWorker.ready;
+
+        // Get VAPID public key from server
+        const response = await fetch('{% url "portal:vapid-public-key" %}');
+        const data = await response.json();
+
+        if (!data.publicKey) {
+            console.warn('Push notifications not configured on server');
+            return null;
+        }
+
+        // Subscribe to push
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(data.publicKey),
+        });
+
+        // Send subscription to server
+        const saveResponse = await fetch('{% url "portal:push-subscribe" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify(subscription.toJSON()),
+        });
+
+        if (saveResponse.ok) {
+            window.pushSubscription = subscription;
+            console.log('Push subscription saved');
+            return subscription;
+        } else {
+            console.error('Failed to save push subscription');
+            return null;
+        }
+    } catch (error) {
+        console.error('Error subscribing to push:', error);
+        return null;
+    }
+}
+
+// Unsubscribe from push notifications
+async function unsubscribeFromPush() {
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+
+        if (subscription) {
+            // Notify server
+            await fetch('{% url "portal:push-unsubscribe" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({ endpoint: subscription.endpoint }),
+            });
+
+            // Unsubscribe locally
+            await subscription.unsubscribe();
+            window.pushSubscription = null;
+            console.log('Push subscription removed');
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error unsubscribing from push:', error);
+        return false;
+    }
+}
+
+// Check if push notifications are supported and permission status
+function getPushPermissionStatus() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        return 'unsupported';
+    }
+    return Notification.permission; // 'default', 'granted', or 'denied'
+}
+
+// Request push notification permission and subscribe
+async function requestPushPermission() {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+        return await subscribeToPush();
+    }
+    return null;
+}
+
+// ==========================================
+// Unread Messages Toast Notification
+// ==========================================
+{% if unread_messages_count > 0 %}
+(function() {
+    const TOAST_KEY = 'unread_messages_toast_shown_{{ user.pk }}';
+    const unreadCount = {{ unread_messages_count }};
+
+    // Only show once per session
+    if (sessionStorage.getItem(TOAST_KEY)) {
+        return;
+    }
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 z-50 transform transition-all duration-500 translate-y-full opacity-0';
+    toast.innerHTML = `
+        <div class="bg-white rounded-lg shadow-2xl border border-gray-200 p-4 max-w-sm">
+            <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center relative">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                        </svg>
+                        <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                            ${unreadCount}
+                        </span>
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-900">New Messages</p>
+                    <p class="text-sm text-gray-600 mt-0.5">You have ${unreadCount} unread message${unreadCount > 1 ? 's' : ''} waiting for you.</p>
+                    <div class="mt-3 flex space-x-3">
+                        <a href="{% url 'portal:messages' %}" class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700">
+                            View Messages
+                        </a>
+                        <button onclick="dismissToast()" class="text-xs text-gray-500 hover:text-gray-700">
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+                <button onclick="dismissToast()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(toast);
+
+    // Show toast after a brief delay
+    setTimeout(function() {
+        toast.classList.remove('translate-y-full', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+    }, 1000);
+
+    // Auto-dismiss after 10 seconds
+    setTimeout(function() {
+        dismissToast();
+    }, 10000);
+
+    window.dismissToast = function() {
+        toast.classList.add('translate-y-full', 'opacity-0');
+        setTimeout(function() {
+            toast.remove();
+        }, 500);
+        sessionStorage.setItem(TOAST_KEY, 'true');
+    };
+
+    // Mark as shown for this session
+    sessionStorage.setItem(TOAST_KEY, 'true');
+})();
+{% endif %}
+</script>
+{% endblock %}

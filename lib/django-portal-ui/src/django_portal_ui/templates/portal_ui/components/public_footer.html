@@ -1,0 +1,53 @@
+{% load portal_ui_tags %}
+<footer class="bg-gray-900 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Brand -->
+            <div>
+                <div class="flex items-center mb-4">
+                    {% if portal_ui.site_logo %}
+                    <img src="{{ portal_ui.site_logo }}" alt="{{ portal_ui.site_name }}" class="h-8 w-auto">
+                    {% else %}
+                    <span class="text-2xl font-bold text-primary-400">{{ portal_ui.site_name }}</span>
+                    {% endif %}
+                </div>
+                {% if portal_ui.footer_text %}
+                <p class="text-gray-400 mb-4">{{ portal_ui.footer_text }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Quick Links -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Links</h3>
+                <ul class="space-y-2">
+                    {% for item in portal_ui.navigation %}
+                    <li><a href="{{ item.resolved_url }}" class="text-gray-400 hover:text-white">{{ item.label }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Portal Links -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Portal</h3>
+                <ul class="space-y-2">
+                    {% if user.is_authenticated %}
+                    <li><a href="{{ portal_ui.portal_prefix }}" class="text-gray-400 hover:text-white">My Dashboard</a></li>
+                    {% if user.is_staff %}
+                    <li><a href="{{ portal_ui.staff_prefix }}" class="text-gray-400 hover:text-white">Staff Portal</a></li>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                    <li><a href="{{ portal_ui.superadmin_prefix }}" class="text-gray-400 hover:text-white">Admin</a></li>
+                    {% endif %}
+                    {% else %}
+                    <li><a href="{{ portal_ui.login_url }}" class="text-gray-400 hover:text-white">Login</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Bottom Bar -->
+        <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400 text-sm">
+            <p>&copy; {% now "Y" %} {{ portal_ui.site_name }}. All rights reserved.</p>
+        </div>
+    </div>
+</footer>

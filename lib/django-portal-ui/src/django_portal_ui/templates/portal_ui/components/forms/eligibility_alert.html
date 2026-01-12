@@ -1,0 +1,46 @@
+{# Eligibility result alert for diveops decisioning #}
+{# Usage: {% include 'portal_ui/components/forms/eligibility_alert.html' with result=eligibility %} #}
+{# Expects result with: allowed (bool), reasons (list), required_actions (list) #}
+
+{% if result and not result.allowed %}
+<div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+        </div>
+        <div class="ml-3 flex-1">
+            <h3 class="text-sm font-medium text-red-800">
+                Not Eligible
+            </h3>
+
+            {# Reasons list #}
+            {% if result.reasons %}
+            <div class="mt-2 text-sm text-red-700">
+                <p class="font-medium">Reasons:</p>
+                <ul class="list-disc pl-5 mt-1 space-y-1">
+                    {% for reason in result.reasons %}
+                        <li>{{ reason }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {# Required actions list #}
+            {% if result.required_actions %}
+            <div class="mt-3 text-sm text-red-700">
+                <p class="font-medium">Required Actions:</p>
+                <ul class="list-disc pl-5 mt-1 space-y-1">
+                    {% for action in result.required_actions %}
+                        <li>{{ action }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}

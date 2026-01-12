@@ -53,7 +53,7 @@ class FolderPermissionForm(forms.Form):
     """Form to grant permission on a folder."""
 
     user = forms.ModelChoiceField(
-        queryset=User.objects.filter(is_active=True).order_by("username"),
+        queryset=User.objects.filter(is_active=True).order_by("email"),
         widget=forms.Select(attrs={
             "class": "block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500",
         }),

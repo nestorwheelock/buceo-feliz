@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, FormView, ListView, TemplateView, UpdateView
 
-from django_portal_ui.mixins import StaffPortalMixin
+from diveops.portal_ui.mixins import StaffPortalMixin
 
 from django_documents.models import (
     AccessAction,

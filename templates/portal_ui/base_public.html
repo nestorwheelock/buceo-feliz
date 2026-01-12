@@ -1,0 +1,39 @@
+{% extends "portal_ui/base.html" %}
+{% load static portal_ui_tags %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Public Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="text-xl font-bold text-primary-600">
+                    DiveOps
+                </a>
+                <nav class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'staff:dashboard' %}" class="text-gray-600 hover:text-gray-900">Dashboard</a>
+                    <a href="{% url 'logout' %}" class="text-gray-600 hover:text-gray-900">Logout</a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="text-gray-600 hover:text-gray-900">Login</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <p class="text-center text-gray-500 text-sm">
+                &copy; {% now "Y" %} DiveOps. All rights reserved.
+            </p>
+        </div>
+    </footer>
+</div>
+{% endblock %}

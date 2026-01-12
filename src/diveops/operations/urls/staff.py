@@ -2,6 +2,6 @@
 
 from diveops.operations.staff_urls import urlpatterns
 
-app_name = "staff"
+app_name = "diveops"
 
 __all__ = ["urlpatterns", "app_name"]

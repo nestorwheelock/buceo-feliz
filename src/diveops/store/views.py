@@ -9,7 +9,7 @@ from django.views import View
 from django.views.generic import ListView, DetailView, TemplateView
 
 from django_catalog.models import CatalogItem
-from django_portal_ui.mixins import PublicViewMixin
+from diveops.portal_ui.mixins import PublicViewMixin
 
 from . import services
 from .models import StoreOrder

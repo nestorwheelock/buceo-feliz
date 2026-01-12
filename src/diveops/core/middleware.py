@@ -1,32 +1,52 @@
 """Core middleware for DiveOps."""
 
-from django.conf import settings
+from django.contrib.auth import get_user_model
+
+IMPERSONATE_SESSION_KEY = "_impersonate_user_id"
+IMPERSONATE_ORIGINAL_USER_KEY = "_impersonate_original_user_id"
 
 
 class ImpersonationMiddleware:
-    """Middleware to handle staff impersonation of customers."""
+    """Middleware to handle staff impersonation of customers.
 
-    IMPERSONATION_SESSION_KEY = "_impersonate_user_id"
+    Sets request.is_impersonating and request.original_user for templates.
+    """
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # Check if user is impersonating someone
-        request.impersonating = None
-        request.real_user = request.user
+        User = get_user_model()
 
-        if request.user.is_authenticated and request.user.is_staff:
-            impersonate_id = request.session.get(self.IMPERSONATION_SESSION_KEY)
-            if impersonate_id:
-                from diveops.core.models import User
+        # Check if impersonation is active
+        impersonated_user_id = request.session.get(IMPERSONATE_SESSION_KEY)
+        original_user_id = request.session.get(IMPERSONATE_ORIGINAL_USER_KEY)
 
-                try:
-                    impersonated_user = User.objects.get(pk=impersonate_id)
-                    request.impersonating = impersonated_user
-                except User.DoesNotExist:
-                    # Clear invalid impersonation
-                    del request.session[self.IMPERSONATION_SESSION_KEY]
+        if impersonated_user_id and request.user.is_authenticated:
+            try:
+                impersonated_user = User.objects.get(pk=impersonated_user_id)
+                original_user = User.objects.get(pk=original_user_id) if original_user_id else request.user
+
+                # Store original user for reference
+                request.original_user = original_user
+                request.real_user = original_user  # Alias for compatibility
+                request.is_impersonating = True
+
+                # Swap the user
+                request.user = impersonated_user
+            except User.DoesNotExist:
+                # Clear invalid impersonation
+                if IMPERSONATE_SESSION_KEY in request.session:
+                    del request.session[IMPERSONATE_SESSION_KEY]
+                if IMPERSONATE_ORIGINAL_USER_KEY in request.session:
+                    del request.session[IMPERSONATE_ORIGINAL_USER_KEY]
+                request.is_impersonating = False
+                request.original_user = None
+                request.real_user = request.user
+        else:
+            request.is_impersonating = False
+            request.original_user = None
+            request.real_user = request.user
 
         response = self.get_response(request)
         return response
@@ -37,10 +57,13 @@ def start_impersonation(request, user_id):
     if not request.user.is_staff:
         raise PermissionError("Only staff can impersonate users")
 
-    request.session[ImpersonationMiddleware.IMPERSONATION_SESSION_KEY] = str(user_id)
+    request.session[IMPERSONATE_SESSION_KEY] = str(user_id)
+    request.session[IMPERSONATE_ORIGINAL_USER_KEY] = str(request.user.pk)
 
 
 def stop_impersonation(request):
     """Stop impersonating a user."""
-    if ImpersonationMiddleware.IMPERSONATION_SESSION_KEY in request.session:
-        del request.session[ImpersonationMiddleware.IMPERSONATION_SESSION_KEY]
+    if IMPERSONATE_SESSION_KEY in request.session:
+        del request.session[IMPERSONATE_SESSION_KEY]
+    if IMPERSONATE_ORIGINAL_USER_KEY in request.session:
+        del request.session[IMPERSONATE_ORIGINAL_USER_KEY]

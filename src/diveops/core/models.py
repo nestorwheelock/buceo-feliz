@@ -1,43 +1,16 @@
 """Core models for DiveOps."""
 
-import uuid
-
-from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-class UserManager(BaseUserManager):
-    """Custom user manager using email as the unique identifier."""
-
-    def create_user(self, email, password=None, **extra_fields):
-        """Create and save a regular user with the given email and password."""
-        if not email:
-            raise ValueError("Users must have an email address")
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, email, password=None, **extra_fields):
-        """Create and save a superuser with the given email and password."""
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-
-        if extra_fields.get("is_staff") is not True:
-            raise ValueError("Superuser must have is_staff=True.")
-        if extra_fields.get("is_superuser") is not True:
-            raise ValueError("Superuser must have is_superuser=True.")
-
-        return self.create_user(email, password, **extra_fields)
-
-
 class User(AbstractUser):
-    """Custom user model using email as the username."""
+    """Custom user model with email as primary identifier.
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    Uses BigAutoField for compatibility with testbed data import.
+    """
+
     email = models.EmailField(unique=True)
-    username = None  # Remove username field
 
     # Link to Person from django-parties (optional)
     person = models.OneToOneField(
@@ -47,11 +20,6 @@ class User(AbstractUser):
         blank=True,
         related_name="user_account",
     )
-
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
-
-    objects = UserManager()
 
     class Meta:
         verbose_name = "user"

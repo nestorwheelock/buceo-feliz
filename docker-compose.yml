@@ -40,7 +40,8 @@ services:
       - ./tests:/app/tests
       - ./manage.py:/app/manage.py
       - ./lib/django-primitives/packages:/lib/packages:ro
-      - media_data:/app/media
+      - /home/nwheelo/projects/django-portal-ui:/lib/django-portal-ui
+      - ./media:/app/media
     ports:
       - "8000:8000"
     environment:
@@ -62,4 +63,3 @@ services:
 
 volumes:
   postgres_data:
-  media_data:

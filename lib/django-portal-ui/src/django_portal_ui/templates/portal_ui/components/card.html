@@ -1,0 +1,14 @@
+{% load portal_ui_tags %}
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden {% if class %}{{ class }}{% endif %}">
+    {% if title %}
+    <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+        <h3 class="text-lg font-medium text-gray-900">{{ title }}</h3>
+        {% if action_url %}
+        <a href="{{ action_url }}" class="text-sm text-primary-600 hover:text-primary-700">{{ action_text|default:"View all" }}</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    <div class="{% if padding %}{{ padding }}{% else %}p-4{% endif %}">
+        {{ content }}
+    </div>
+</div>

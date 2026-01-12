@@ -12,7 +12,7 @@ from django.views.generic import TemplateView
 
 from django_cms_core.models import AccessLevel, ContentPage, PageStatus
 from django_cms_core.services import check_page_access
-from django_portal_ui.mixins import CustomerPortalMixin
+from diveops.portal_ui.mixins import CustomerPortalMixin
 
 from diveops.store.models import StoreOrder
 

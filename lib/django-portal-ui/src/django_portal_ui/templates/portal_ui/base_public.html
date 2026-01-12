@@ -1,0 +1,33 @@
+{% extends "portal_ui/base.html" %}
+{% load static portal_ui_tags %}
+
+{% block body %}
+<!-- Skip to content for accessibility -->
+<a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary-500 text-white px-4 py-2 rounded">
+    Skip to content
+</a>
+
+<!-- Header -->
+{% block header %}
+{% include "portal_ui/components/public_header.html" %}
+{% endblock %}
+
+<!-- Flash Messages -->
+{% block messages %}
+{% include "portal_ui/components/messages.html" %}
+{% endblock %}
+
+<!-- Main Content -->
+<main id="main-content" class="flex-grow">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+{% block footer %}
+{% if portal_ui.show_footer %}
+{% include "portal_ui/components/public_footer.html" %}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}{% endblock %}
+{% endblock %}

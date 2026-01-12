@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-2.0-0 \
     libffi-dev \
     shared-mime-info \
     git \
@@ -19,11 +19,34 @@ COPY requirements/base.txt requirements/dev.txt ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r dev.txt
 
-# Install django-primitives in editable mode
+# Install django-portal-ui
+COPY lib/django-portal-ui/ /lib/django-portal-ui/
+RUN pip install -e /lib/django-portal-ui
+
+# Install django-primitives in dependency order
 COPY lib/django-primitives/packages/ /lib/packages/
-RUN for pkg in /lib/packages/django-*/; do \
-        pip install -e "$pkg"; \
-    done
+RUN pip install -e /lib/packages/django-basemodels && \
+    pip install -e /lib/packages/django-singleton && \
+    pip install -e /lib/packages/django-sequence && \
+    pip install -e /lib/packages/django-money && \
+    pip install -e /lib/packages/django-decisioning && \
+    pip install -e /lib/packages/django-parties && \
+    pip install -e /lib/packages/django-modules && \
+    pip install -e /lib/packages/django-rbac && \
+    pip install -e /lib/packages/django-communication && \
+    pip install -e /lib/packages/django-audit-log && \
+    pip install -e /lib/packages/django-documents && \
+    pip install -e /lib/packages/django-catalog && \
+    pip install -e /lib/packages/django-encounters && \
+    pip install -e /lib/packages/django-worklog && \
+    pip install -e /lib/packages/django-ledger && \
+    pip install -e /lib/packages/django-agreements && \
+    pip install -e /lib/packages/django-questionnaires && \
+    pip install -e /lib/packages/django-notes && \
+    pip install -e /lib/packages/django-geo && \
+    pip install -e /lib/packages/django-layers && \
+    pip install -e /lib/packages/django-cms-core && \
+    pip install -e /lib/packages/django-ai-services
 
 EXPOSE 8000
 
