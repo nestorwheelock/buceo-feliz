@@ -14,15 +14,19 @@ use sqlx::PgPool;
 use tower_http::{compression::CompressionLayer, services::ServeDir, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+mod cache;
 mod db;
 mod error;
 mod models;
 mod routes;
 
+use cache::{start_cache_warmer, AppCache};
+
 /// Application state shared across all handlers
 #[derive(Clone)]
 pub struct AppState {
     pub db: PgPool,
+    pub cache: AppCache,
 }
 
 #[tokio::main]
@@ -51,12 +55,25 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Database connected successfully");
 
-    let state = AppState { db: pool };
+    // Create cache and application state
+    let cache = AppCache::new();
+    let state = AppState {
+        db: pool.clone(),
+        cache: cache.clone(),
+    };
+
+    // Start background cache warmer
+    let warmer_cache = cache.clone();
+    let warmer_db = pool.clone();
+    tokio::spawn(async move {
+        start_cache_warmer(warmer_cache, warmer_db).await;
+    });
 
     // Build router
     let app = Router::new()
-        // Health check
+        // Health check and cache stats
         .route("/health", get(health_check))
+        .route("/health/cache", get(cache_stats))
         // Blog routes
         .route("/blog/", get(routes::blog::list))
         .route("/blog/:slug/", get(routes::blog::detail))
@@ -99,4 +116,9 @@ async fn health_check(State(state): State<AppState>) -> impl IntoResponse {
             }))
         }
     }
+}
+
+/// Cache statistics endpoint
+async fn cache_stats(State(state): State<AppState>) -> impl IntoResponse {
+    Json(state.cache.stats())
 }

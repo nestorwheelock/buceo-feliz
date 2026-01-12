@@ -6,10 +6,12 @@ use axum::{
     response::Html,
 };
 use serde::Deserialize;
+use std::sync::Arc;
 
+use crate::cache::AppCache;
 use crate::db;
 use crate::error::Result;
-use crate::models::{Block, BlogCategory, BlogPostSummary};
+use crate::models::{Block, BlogCategory, BlogPostSummary, ParsedPage};
 use crate::AppState;
 
 /// Query parameters for blog listing
@@ -61,8 +63,19 @@ pub async fn list(
     Query(query): Query<BlogListQuery>,
 ) -> Result<Html<String>> {
     let offset = (query.page - 1) * POSTS_PER_PAGE;
+    let cache_key = AppCache::blog_listing_key(None, query.page);
 
-    let posts = db::get_blog_posts(&state.db, None, POSTS_PER_PAGE, offset).await?;
+    // Try cache first for posts
+    let posts = if let Some(cached) = state.cache.blog_listings.get(&cache_key).await {
+        tracing::debug!("Cache HIT for blog listing: {}", cache_key);
+        (*cached).clone()
+    } else {
+        tracing::debug!("Cache MISS for blog listing: {}", cache_key);
+        let posts = db::get_blog_posts(&state.db, None, POSTS_PER_PAGE, offset).await?;
+        state.cache.blog_listings.insert(cache_key, Arc::new(posts.clone())).await;
+        posts
+    };
+
     let categories = db::get_blog_categories(&state.db).await?;
     let total = db::count_blog_posts(&state.db, None).await?;
     let total_pages = (total + POSTS_PER_PAGE - 1) / POSTS_PER_PAGE;
@@ -90,8 +103,19 @@ pub async fn by_category(
     Query(query): Query<BlogListQuery>,
 ) -> Result<Html<String>> {
     let offset = (query.page - 1) * POSTS_PER_PAGE;
+    let cache_key = AppCache::blog_listing_key(Some(&category), query.page);
 
-    let posts = db::get_blog_posts(&state.db, Some(&category), POSTS_PER_PAGE, offset).await?;
+    // Try cache first for posts
+    let posts = if let Some(cached) = state.cache.blog_listings.get(&cache_key).await {
+        tracing::debug!("Cache HIT for category listing: {}", cache_key);
+        (*cached).clone()
+    } else {
+        tracing::debug!("Cache MISS for category listing: {}", cache_key);
+        let posts = db::get_blog_posts(&state.db, Some(&category), POSTS_PER_PAGE, offset).await?;
+        state.cache.blog_listings.insert(cache_key, Arc::new(posts.clone())).await;
+        posts
+    };
+
     let categories = db::get_blog_categories(&state.db).await?;
     let total = db::count_blog_posts(&state.db, Some(&category)).await?;
     let total_pages = (total + POSTS_PER_PAGE - 1) / POSTS_PER_PAGE;
@@ -117,11 +141,19 @@ pub async fn detail(
     State(state): State<AppState>,
     Path(slug): Path<String>,
 ) -> Result<Html<String>> {
-    let page = db::get_blog_post(&state.db, &slug).await?;
-    let categories = db::get_blog_categories(&state.db).await?;
+    // Try cache first for parsed blog post
+    let parsed: ParsedPage = if let Some(cached) = state.cache.blog_posts.get(&slug).await {
+        tracing::debug!("Cache HIT for blog post: {}", slug);
+        (*cached).clone()
+    } else {
+        tracing::debug!("Cache MISS for blog post: {}", slug);
+        let page = db::get_blog_post(&state.db, &slug).await?;
+        let parsed = page.parse().ok_or(crate::error::AppError::NotFound)?;
+        state.cache.blog_posts.insert(slug.clone(), Arc::new(parsed.clone())).await;
+        parsed
+    };
 
-    // Parse the published snapshot
-    let parsed = page.parse().ok_or(crate::error::AppError::NotFound)?;
+    let categories = db::get_blog_categories(&state.db).await?;
 
     // Get related posts (same category)
     let related_posts = db::get_blog_posts(&state.db, None, 3, 0).await?;
