@@ -69,16 +69,14 @@ services:
       - MIGRATE=false
       - SUPERUSER_EMAIL=${SUPERUSER_EMAIL:-}
       - SUPERUSER_PASSWORD=${SUPERUSER_PASSWORD:-}
-    # Override CMD for smaller VPS: 2 workers instead of 4
+    # Use Daphne ASGI server for WebSocket support
     command: >
-      gunicorn diveops.wsgi:application
-      --bind 0.0.0.0:8000
-      --workers 2
-      --threads 1
-      --max-requests 500
-      --max-requests-jitter 50
-      --access-logfile -
-      --error-logfile -
+      daphne
+      -b 0.0.0.0
+      -p 8000
+      --access-log -
+      --verbosity 1
+      diveops.asgi:application
     volumes:
       - static_data:/app/staticfiles
       - media_data:/app/media
