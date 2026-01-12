@@ -427,6 +427,264 @@ POSTS = [
             },
         ],
     },
+    # === Posts from nestorwheelock.com (rewritten for Happy Diving) ===
+    {
+        "slug": "shore-dive-ojo-de-agua-puerto-morelos",
+        "title": "Shore Diving at Ojo de Agua: Puerto Morelos' Hidden Gem",
+        "category_slug": "stories",
+        "excerpt": "Discover the magic of Ojo de Agua, where freshwater springs create a dancing halocline and recovering reefs showcase nature's resilience.",
+        "featured_image_url": "https://nestorwheelock.com/media/library/2024/12/PC220002.jpg",
+        "reading_time_minutes": 6,
+        "tags": ["shore diving", "puerto morelos", "halocline", "reef", "local diving", "mexico"],
+        "blocks": [
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p>Sometimes the most magical dives are the ones closest to shore. Yesterday's shore dive at Ojo de Agua in Puerto Morelos reminded us why we fell in love with diving in the Riviera Maya. No boat needed—just a short swim from the beach to an underwater wonderland.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "The Magic of the Halocline", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p>Ojo de Agua—Spanish for \"Eye of Water\"—gets its name from the freshwater springs that bubble up from the seafloor. Where this freshwater meets the saltwater of the Caribbean, something magical happens: a halocline forms, creating a shimmering, dancing layer that distorts light and makes you feel like you're diving through liquid glass.</p><p>The temperature difference is noticeable too. One moment you're in warm tropical water, the next you hit a cool pocket of fresh spring water. It's like nature's own thermocline surprise.</p>"
+                },
+            },
+            {
+                "type": "image_gallery",
+                "data": {
+                    "images": [
+                        {"url": "https://nestorwheelock.com/media/library/2024/12/PC220010.jpg", "alt": "Halocline effect at Ojo de Agua"},
+                        {"url": "https://nestorwheelock.com/media/library/2024/12/PC220027.jpg", "alt": "Coral formations at Puerto Morelos reef"},
+                        {"url": "https://nestorwheelock.com/media/library/2024/12/PC220053.jpg", "alt": "Fish schooling over the reef"},
+                        {"url": "https://nestorwheelock.com/media/library/2024/12/PC220076.jpg", "alt": "Underwater landscape Puerto Morelos"},
+                    ],
+                    "columns": 2,
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "A Reef in Recovery", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p>Like many Caribbean reefs, Ojo de Agua has faced challenges from coral bleaching events. But what we saw yesterday gave us hope. The reef is bouncing back. Juvenile corals are settling in, fish are recolonizing their territories, and the overall health of the ecosystem is improving.</p><p>This resilience is a testament to both nature's power to heal and the protection efforts of the Parque Nacional Arrecife de Puerto Morelos. When we take care of our reefs, they take care of us.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "Why We Love Shore Diving", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<ul><li><strong>Flexibility</strong> - Dive when conditions are right, not when the boat schedule says</li><li><strong>Longer bottom times</strong> - No rushing back to the boat</li><li><strong>Cost-effective</strong> - Perfect for multiple dives without the boat fees</li><li><strong>Intimate experience</strong> - Just you, your buddy, and the ocean</li></ul>"
+                },
+            },
+            {
+                "type": "image_gallery",
+                "data": {
+                    "images": [
+                        {"url": "https://nestorwheelock.com/media/library/2024/12/PC220086.jpg", "alt": "Colorful reef life"},
+                        {"url": "https://nestorwheelock.com/media/library/2024/12/PC220098.jpg", "alt": "Diver exploring Ojo de Agua"},
+                        {"url": "https://nestorwheelock.com/media/library/2024/12/PC220115.jpg", "alt": "Marine life at Puerto Morelos"},
+                        {"url": "https://nestorwheelock.com/media/library/2024/12/PC220137.jpg", "alt": "Sunset dive at Ojo de Agua"},
+                    ],
+                    "columns": 2,
+                },
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p>If you're visiting Playa del Carmen and want to experience something different from the typical boat dive, ask us about our Puerto Morelos shore diving excursions. Ojo de Agua is just one of the treasures waiting to be discovered.</p>"
+                },
+            },
+        ],
+    },
+    {
+        "slug": "hidden-treasures-mooring-systems",
+        "title": "Hidden Treasures: The Secret Life of Mooring Systems",
+        "category_slug": "marine-life",
+        "excerpt": "Discover how underwater mooring systems transform from industrial infrastructure into thriving mini-ecosystems teeming with marine life.",
+        "featured_image_url": "https://nestorwheelock.com/media/chat_uploads/2025/12/P8131448-sm.png",
+        "reading_time_minutes": 5,
+        "tags": ["marine life", "ecology", "infrastructure", "reef", "puerto morelos", "conservation"],
+        "blocks": [
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p>Most divers swim right past them—those heavy chains and concrete blocks anchoring navigation buoys in swimming areas. But if you slow down and look closely, you'll discover one of the ocean's best-kept secrets: mooring systems are underwater treasure troves of marine life.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "From Industrial to Ecological", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p>These utilitarian structures weren't designed with marine life in mind. They exist to secure buoys, mark swimming areas, and protect boats from drifting. Yet give them a few years underwater, and something remarkable happens: they transform into thriving mini-reefs.</p><p>The concrete blocks become encrusted with sponges and corals. The chains develop a fuzzy coating of algae that attracts grazing fish. And the buoy itself creates a shaded refuge for juvenile fish seeking shelter from predators.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "Layers of Life", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p>What fascinates us most is how different species partition these structures into distinct zones:</p><ul><li><strong>The Bottom Dwellers</strong> - Sea cucumbers, starfish, and crabs make homes around the anchor base</li><li><strong>The Chain Gang</strong> - Schooling fish congregate along the chain, using it as a reference point in the open water</li><li><strong>The Shade Seekers</strong> - Juvenile fish cluster near the surface in the buoy's shadow</li><li><strong>The Hunters</strong> - Barracuda and jacks patrol nearby, knowing prey concentrates here</li></ul>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "Stepping Stones Across the Sand", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p>In areas where sandy bottom separates reef patches, mooring systems serve as crucial \"stepping stones\" for marine life. They provide habitat connectivity, allowing creatures to hop from one structure to another across otherwise barren stretches.</p><p>Next time you're diving in Puerto Morelos or anywhere with mooring systems, take a few minutes to hover by one and observe. You might be surprised by the diversity of life clinging to what most people consider just industrial equipment.</p>"
+                },
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p><em>These observations come from countless dives inspecting moorings in the Parque Nacional Arrecife de Puerto Morelos—proof that wonder can be found in the most unexpected places.</em></p>"
+                },
+            },
+        ],
+    },
+    {
+        "slug": "15-misconceptions-scuba-certification",
+        "title": "15 Common Misconceptions About Scuba Diving Certification",
+        "category_slug": "training",
+        "excerpt": "Think you know everything about getting certified? We debunk the most persistent myths about scuba training that might be holding you back.",
+        "featured_image_url": "https://nestorwheelock.com/media/library/2025/12/P9142609-sm.png",
+        "reading_time_minutes": 12,
+        "tags": ["certification", "training", "padi", "myths", "beginners", "education"],
+        "blocks": [
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p>After years of teaching scuba diving, we've heard every misconception in the book. Some of these myths discourage potential divers from ever getting certified. Others create unnecessary anxiety during training. Let's set the record straight.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "Myth #1: Training is One-Size-Fits-All", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p><strong>Reality:</strong> Good instructors adapt their teaching to each student. While safety standards are non-negotiable, the way we explain concepts, demonstrate skills, and guide practice varies based on your learning style, comfort level, and pace. Diving education is structured, supportive, and human.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "Myth #2: You Need to Be Super Athletic", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p><strong>Reality:</strong> Diving is about buoyancy control and breathing technique, not brute strength. Some of our best students weren't athletes—they were patient people who mastered the art of moving efficiently underwater. Adaptive diving programs also prove that people with various physical abilities can become excellent divers.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "Myth #3: You Must Finish Training in One Trip", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p><strong>Reality:</strong> Referral programs let you start your certification at home (theory and pool work) and finish your open water dives on vacation. Life happens—training can pause for legitimate reasons, and skill refreshers can get you back on track.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "Myth #4: Pool Training Must Happen in a Pool", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p><strong>Reality:</strong> Confined water training can happen in pools, calm quarries, shallow beach areas, or any body of water meeting safety standards. What matters is controlled conditions, not the specific location.</p>"
+                },
+            },
+            {
+                "type": "image_gallery",
+                "data": {
+                    "images": [
+                        {"url": "https://nestorwheelock.com/media/library/2025/12/P8242325-sm.png", "alt": "Student diver practicing skills"},
+                        {"url": "https://nestorwheelock.com/media/library/2025/12/vlcsnap-2025-09-10-21h05m13s750.png", "alt": "Underwater training session"},
+                    ],
+                    "columns": 2,
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "Myth #5: Certifications Are Only Valid Locally", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p><strong>Reality:</strong> PADI, SSI, and other major certification agencies are globally recognized. A certification earned in Mexico is valid in Thailand, Australia, the Maldives—anywhere in the world.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "Myth #6: You Need Lots of Dives Before Advanced Training", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p><strong>Reality:</strong> Advanced Open Water builds on your basic certification—you don't need 50 dives first. The course itself provides structured experience through specialty dives like deep diving and navigation. Training creates experience.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "Myth #7: There's Only One Way to Perform Skills", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p><strong>Reality:</strong> Multiple acceptable methods exist for most skills. Mask clearing, for example, can be done several ways—what matters is that water leaves your mask safely. Skill development is adaptation, not uniform repetition.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "Myth #8: Online Learning Expires Quickly", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p><strong>Reality:</strong> Digital learning materials typically offer extended or permanent access. You can (and should) revisit theory before trips. Diving knowledge isn't static—continuing education strengthens safety.</p>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "More Myths We Hear Regularly", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<ul><li><strong>\"Equipment setup is standardized\"</strong> - Various configurations exist based on diving goals and physical needs</li><li><strong>\"Kids can't use digital learning\"</strong> - Age-appropriate pathways exist with proper supervision</li><li><strong>\"Instructors must teach in a fixed order\"</strong> - Limited flexibility exists to arrange skills based on student comfort</li><li><strong>\"The only path is Open Water → Advanced → Rescue → Divemaster\"</strong> - Dozens of specialty courses offer different directions</li><li><strong>\"Becoming an instructor requires being young\"</strong> - Many become instructors later in life; judgment matters as much as water skills</li></ul>"
+                },
+            },
+            {
+                "type": "heading",
+                "data": {"text": "The Bottom Line", "level": 2},
+            },
+            {
+                "type": "rich_text",
+                "data": {
+                    "content": "<p>Modern scuba training balances standardized safety frameworks with individualized instruction. Don't let misconceptions hold you back from exploring the underwater world. The certification process is designed to be accessible, flexible, and—most importantly—to produce safe, confident divers.</p><p>Have questions about getting certified? <a href='/contact/'>Reach out to us</a>—we're happy to help you start your diving journey.</p>"
+                },
+            },
+        ],
+    },
 ]
 
 
