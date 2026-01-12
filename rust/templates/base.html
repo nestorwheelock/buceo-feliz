@@ -312,8 +312,15 @@
 
             // Send message
             async function sendMessage() {
+                console.log('sendMessage called');
+
                 const text = input.value.trim();
-                if (!text) return;
+                if (!text) {
+                    console.log('No message text');
+                    input.classList.add('border-red-500');
+                    setTimeout(() => input.classList.remove('border-red-500'), 2000);
+                    return;
+                }
 
                 const payload = { message: text };
 
@@ -322,15 +329,21 @@
                     const name = nameInput.value.trim();
                     const email = emailInput.value.trim();
 
+                    console.log('Registration check:', { name, email, isRegistered });
+
                     if (!name || !email) {
                         nameInput.classList.toggle('border-red-500', !name);
                         emailInput.classList.toggle('border-red-500', !email);
+                        // Show hint message
+                        if (!name) nameInput.placeholder = 'Name required';
+                        if (!email) emailInput.placeholder = 'Email required';
                         return;
                     }
 
                     // Basic email validation
                     if (!email.includes('@')) {
                         emailInput.classList.add('border-red-500');
+                        emailInput.placeholder = 'Valid email required';
                         return;
                     }
 
@@ -344,6 +357,8 @@
                 input.disabled = true;
                 sendBtn.disabled = true;
 
+                console.log('Sending to:', CHAT_API_URL, payload);
+
                 try {
                     const response = await fetch(CHAT_API_URL, {
                         method: 'POST',
@@ -352,7 +367,9 @@
                         body: JSON.stringify(payload)
                     });
 
+                    console.log('Response status:', response.status);
                     const data = await response.json();
+                    console.log('Response data:', data);
 
                     if (response.ok) {
                         isRegistered = true;
@@ -360,18 +377,16 @@
                         conversationId = data.conversation_id;
 
                         // Show confirmation for first message
-                        if (!isRegistered) {
-                            setTimeout(() => {
-                                addMessage("Thanks for reaching out! We'll get back to you shortly.", 'staff');
-                            }, 500);
-                        }
+                        setTimeout(() => {
+                            addMessage("Thanks for reaching out! We'll get back to you shortly.", 'staff');
+                        }, 500);
                     } else {
                         // Show error
                         addMessage(data.error || 'Failed to send message. Please try again.', 'staff');
                     }
                 } catch (error) {
                     console.error('Failed to send message:', error);
-                    addMessage('Connection error. Please try again.', 'staff');
+                    addMessage('Connection error: ' + error.message, 'staff');
                 }
 
                 input.disabled = false;

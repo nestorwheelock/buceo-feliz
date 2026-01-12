@@ -205,6 +205,19 @@ jobs:
             docker image prune -f
 
             # Show status and logs
-            docker compose -f docker-compose.prod.yml ps
-            echo "=== Recent web logs ==="
-            docker compose -f docker-compose.prod.yml logs --tail=20 web
+            echo "=== Container Status ==="
+            docker compose -f docker-compose.prod.yml ps -a
+
+            echo "=== Web Container Logs (last 50 lines) ==="
+            docker compose -f docker-compose.prod.yml logs --tail=50 web
+
+            echo "=== Rust Container Logs (last 20 lines) ==="
+            docker compose -f docker-compose.prod.yml logs --tail=20 rust
+
+            echo "=== Health Check ==="
+            # Test if Django is responding
+            sleep 10
+            docker compose -f docker-compose.prod.yml exec -T web curl -s http://localhost:8000/health/ || echo "Health check failed!"
+
+            echo "=== Final Container Status ==="
+            docker compose -f docker-compose.prod.yml ps -a
