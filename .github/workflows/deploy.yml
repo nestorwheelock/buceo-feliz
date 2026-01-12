@@ -258,3 +258,13 @@ jobs:
 
             echo "=== Final Container Status ==="
             docker compose -f docker-compose.prod.yml ps -a
+
+            echo "=== MEMORY ANALYSIS ==="
+            echo "--- System Memory ---"
+            free -h
+            echo ""
+            echo "--- Container Memory Usage ---"
+            docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.CPUPerc}}"
+            echo ""
+            echo "--- Docker System Info ---"
+            docker system df -v | head -30
