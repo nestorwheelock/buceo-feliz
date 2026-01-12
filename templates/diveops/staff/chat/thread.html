@@ -275,7 +275,7 @@ function chatThread() {
             this.$nextTick(() => this.scrollToBottom());
 
             try {
-                const resp = await fetch(`/staff/leads/${this.personId}/send-message/`, {
+                const resp = await fetch(`/staff/crm/leads/${this.personId}/send-message/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
