@@ -6,8 +6,15 @@ from django.contrib import admin
 from django.urls import include, path
 
 from diveops.core.impersonation import ImpersonateStartView, ImpersonateStopView
-from diveops.core.views import health_check
+from diveops.core.views import health_check, BlogListView, BlogDetailView
 from django_cms_core.urls import page_urlpatterns as cms_page_patterns
+
+# Blog URL patterns
+blog_urlpatterns = [
+    path("", BlogListView.as_view(), name="list"),
+    path("category/<slug:category_slug>/", BlogListView.as_view(), name="category"),
+    path("<slug:slug>/", BlogDetailView.as_view(), name="detail"),
+]
 
 urlpatterns = [
     # Health check
@@ -43,6 +50,9 @@ urlpatterns = [
 
     # Pricing
     path("pricing/", include("diveops.pricing.urls")),
+
+    # Blog
+    path("blog/", include((blog_urlpatterns, "blog"), namespace="blog")),
 
     # CMS public pages (catch-all for slug-based pages)
     path("", include(cms_page_patterns)),

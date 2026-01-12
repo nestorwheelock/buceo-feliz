@@ -1,0 +1,121 @@
+{% extends "portal_ui/base_public.html" %}
+{% load portal_ui_tags %}
+
+{% block title %}Blog - {{ portal_ui.site_name|default:"Happy Diving" }}{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="Dive into our blog for expert tips, underwater adventures, marine life guides, and everything scuba diving.">
+{% endblock %}
+
+{% block content %}
+<div class="bg-gradient-to-b from-blue-600 to-blue-700 text-white py-12 px-4 -mx-4 -mt-8 mb-8">
+    <div class="max-w-6xl mx-auto text-center">
+        <h1 class="text-4xl font-bold mb-4">Happy Diving Blog</h1>
+        <p class="text-xl text-blue-100 max-w-2xl mx-auto">
+            Dive into stories, tips, and underwater adventures from the Caribbean
+        </p>
+    </div>
+</div>
+
+<div class="max-w-6xl mx-auto px-4">
+    <!-- Category Filter -->
+    {% if categories %}
+    <div class="mb-8 flex flex-wrap gap-2">
+        <a href="{% url 'blog:list' %}"
+           class="px-4 py-2 rounded-full text-sm font-medium transition-colors
+                  {% if not current_category %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            All Posts
+        </a>
+        {% for category in categories %}
+        <a href="{% url 'blog:category' category.slug %}"
+           class="px-4 py-2 rounded-full text-sm font-medium transition-colors
+                  {% if current_category == category.slug %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            {{ category.name }}
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Posts Grid -->
+    {% if posts %}
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        {% for post in posts %}
+        <article class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow border border-gray-100">
+            {% if post.featured_image_url %}
+            <a href="{% url 'blog:detail' post.slug %}">
+                <img src="{{ post.featured_image_url }}" alt="{{ post.title }}"
+                     class="w-full h-48 object-cover">
+            </a>
+            {% else %}
+            <a href="{% url 'blog:detail' post.slug %}">
+                <div class="w-full h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                    {% icon "book-open" "w-12 h-12 text-white/50" %}
+                </div>
+            </a>
+            {% endif %}
+
+            <div class="p-5">
+                {% if post.category %}
+                <span class="inline-block px-2 py-1 text-xs font-medium rounded-full mb-2"
+                      style="background-color: {{ post.category.color|default:'#3B82F6' }}20; color: {{ post.category.color|default:'#3B82F6' }};">
+                    {{ post.category.name }}
+                </span>
+                {% endif %}
+
+                <h2 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                    <a href="{% url 'blog:detail' post.slug %}" class="hover:text-blue-600 transition-colors">
+                        {{ post.title }}
+                    </a>
+                </h2>
+
+                {% if post.excerpt %}
+                <p class="text-gray-600 text-sm mb-3 line-clamp-3">{{ post.excerpt }}</p>
+                {% endif %}
+
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                    {% if post.published_at %}
+                    <span>{{ post.published_at|date:"M d, Y" }}</span>
+                    {% endif %}
+                    {% if post.reading_time_minutes %}
+                    <span>{{ post.reading_time_minutes }} min read</span>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav class="flex justify-center space-x-2 mb-12">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}"
+           class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+            Previous
+        </a>
+        {% endif %}
+
+        <span class="px-4 py-2 text-gray-600">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}"
+           class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+            Next
+        </a>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-12">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            {% icon "book-open" "w-8 h-8 text-gray-400" %}
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
+        <p class="text-gray-500">Check back soon for diving tips and stories!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
