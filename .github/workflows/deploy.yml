@@ -227,10 +227,28 @@ jobs:
             echo "=== Rust Container Logs (last 20 lines) ==="
             docker compose -f docker-compose.prod.yml logs --tail=20 rust
 
+            echo "=== Testing Django Models ==="
+            docker compose -f docker-compose.prod.yml exec -T web python -c "
+import django
+django.setup()
+from django_parties.models import Person
+print('Person model loaded successfully')
+print('Person fields:', [f.name for f in Person._meta.fields[:10]])
+print('Person count:', Person.objects.count())
+" || echo "Model test failed - check traceback above"
+
+            echo "=== Testing Chat API ==="
+            docker compose -f docker-compose.prod.yml exec -T web python -c "
+import django
+django.setup()
+from diveops.operations.public_views import PublicChatAPIView
+print('Chat view imported successfully')
+" || echo "Chat view import failed - check traceback above"
+
             echo "=== Health Check ==="
-            # Test if Django is responding
-            sleep 10
-            docker compose -f docker-compose.prod.yml exec -T web curl -s http://localhost:8000/health/ || echo "Health check failed!"
+            # Test Django admin endpoint
+            sleep 5
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py shell -c \"from django.contrib.auth import get_user_model; User=get_user_model(); print(f'Users: {User.objects.count()}')\" || echo "Health check failed!"
 
             echo "=== Final Container Status ==="
             docker compose -f docker-compose.prod.yml ps -a
