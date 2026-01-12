@@ -32,7 +32,7 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # 1. Backup production first (safety)
 echo -e "${GREEN}[1/5] Backing up production database first...${NC}"
-ssh "$SERVER_USER@$SERVER_HOST" "cd $SERVER_PATH && docker compose exec -T db pg_dump -U \$POSTGRES_USER \$POSTGRES_DB" > "$LOCAL_BACKUP_DIR/prod_backup_$TIMESTAMP.sql"
+ssh "$SERVER_USER@$SERVER_HOST" "cd $SERVER_PATH && docker compose -f docker-compose.prod.yml exec -T db pg_dump -U \$POSTGRES_USER \$POSTGRES_DB" > "$LOCAL_BACKUP_DIR/prod_backup_$TIMESTAMP.sql"
 echo "  Saved to: $LOCAL_BACKUP_DIR/prod_backup_$TIMESTAMP.sql"
 
 # 2. Dump local database
@@ -41,8 +41,8 @@ docker compose exec -T db pg_dump -U diveops diveops > "$LOCAL_BACKUP_DIR/local_
 
 # 3. Push database to server
 echo -e "${GREEN}[3/5] Pushing database to server...${NC}"
-ssh "$SERVER_USER@$SERVER_HOST" "cd $SERVER_PATH && docker compose exec -T db psql -U \$POSTGRES_USER -d \$POSTGRES_DB -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'"
-cat "$LOCAL_BACKUP_DIR/local_$TIMESTAMP.sql" | ssh "$SERVER_USER@$SERVER_HOST" "cd $SERVER_PATH && docker compose exec -T db psql -U \$POSTGRES_USER \$POSTGRES_DB"
+ssh "$SERVER_USER@$SERVER_HOST" "cd $SERVER_PATH && docker compose -f docker-compose.prod.yml exec -T db psql -U \$POSTGRES_USER -d \$POSTGRES_DB -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'"
+cat "$LOCAL_BACKUP_DIR/local_$TIMESTAMP.sql" | ssh "$SERVER_USER@$SERVER_HOST" "cd $SERVER_PATH && docker compose -f docker-compose.prod.yml exec -T db psql -U \$POSTGRES_USER \$POSTGRES_DB"
 
 # 4. Sync media files to server
 echo -e "${GREEN}[4/5] Syncing media files to server...${NC}"
@@ -50,10 +50,10 @@ rsync -avz --progress ./media/ "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/media/"
 
 # 5. Restart server containers
 echo -e "${GREEN}[5/5] Restarting server containers...${NC}"
-ssh "$SERVER_USER@$SERVER_HOST" "cd $SERVER_PATH && docker compose restart web"
+ssh "$SERVER_USER@$SERVER_HOST" "cd $SERVER_PATH && docker compose -f docker-compose.prod.yml restart web"
 
 echo -e "${GREEN}=== Done! ===${NC}"
 echo ""
 echo "Production backup saved to: $LOCAL_BACKUP_DIR/prod_backup_$TIMESTAMP.sql"
 echo "If something went wrong, restore with:"
-echo "  cat $LOCAL_BACKUP_DIR/prod_backup_$TIMESTAMP.sql | ssh $SERVER_USER@$SERVER_HOST 'cd $SERVER_PATH && docker compose exec -T db psql -U \$POSTGRES_USER \$POSTGRES_DB'"
+echo "  cat $LOCAL_BACKUP_DIR/prod_backup_$TIMESTAMP.sql | ssh $SERVER_USER@$SERVER_HOST 'cd $SERVER_PATH && docker compose -f docker-compose.prod.yml exec -T db psql -U \$POSTGRES_USER \$POSTGRES_DB'"
