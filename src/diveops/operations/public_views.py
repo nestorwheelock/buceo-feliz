@@ -779,3 +779,244 @@ class BlogPostView(View):
 
 # Add imports for blog views at the top of the file
 from django.db.models import Count, Q
+
+
+# =============================================================================
+# Public Chat Widget API
+# =============================================================================
+
+import json
+import uuid as uuid_module
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PublicChatAPIView(View):
+    """Public chat widget API - creates leads and conversations.
+
+    This API powers the website chat widget. It:
+    - Tracks visitors via session cookie (visitor_id)
+    - Creates Person records as leads (lead_source="website_chat")
+    - Creates/continues conversations for the visitor
+    - Stores all messages for future AI integration
+
+    No authentication required. Rate limiting should be applied at nginx level.
+    """
+
+    VISITOR_COOKIE_NAME = "hd_visitor_id"
+    VISITOR_COOKIE_MAX_AGE = 365 * 24 * 60 * 60  # 1 year
+
+    def get_visitor_id(self, request):
+        """Get or generate visitor ID from cookie."""
+        visitor_id = request.COOKIES.get(self.VISITOR_COOKIE_NAME)
+        if not visitor_id:
+            visitor_id = str(uuid_module.uuid4())
+        return visitor_id
+
+    def get(self, request):
+        """Get conversation history for visitor.
+
+        Returns conversation ID and messages if visitor has an existing conversation.
+        """
+        visitor_id = self.get_visitor_id(request)
+
+        # Find existing person/conversation for this visitor
+        from django_parties.models import Person
+
+        try:
+            person = Person.objects.get(
+                visitor_id=visitor_id,
+                deleted_at__isnull=True,
+            )
+        except Person.DoesNotExist:
+            # No existing visitor record
+            response = JsonResponse({
+                "status": "new_visitor",
+                "visitor_id": visitor_id,
+                "conversation": None,
+                "messages": [],
+            })
+            response.set_cookie(
+                self.VISITOR_COOKIE_NAME,
+                visitor_id,
+                max_age=self.VISITOR_COOKIE_MAX_AGE,
+                httponly=True,
+                samesite="Lax",
+            )
+            return response
+
+        # Find their conversation
+        from django_communication.models import Conversation, ConversationStatus, Message
+        from django.contrib.contenttypes.models import ContentType
+
+        person_ct = ContentType.objects.get_for_model(Person)
+        conversation = Conversation.objects.filter(
+            related_content_type=person_ct,
+            related_object_id=str(person.pk),
+            status=ConversationStatus.ACTIVE,
+        ).first()
+
+        messages_data = []
+        if conversation:
+            messages = Message.objects.filter(
+                conversation=conversation,
+            ).order_by("created_at")[:50]
+
+            for msg in messages:
+                messages_data.append({
+                    "id": str(msg.pk),
+                    "direction": msg.direction,
+                    "body": msg.body_text,
+                    "created_at": msg.created_at.isoformat(),
+                    "sender": "you" if msg.direction == "inbound" else "staff",
+                })
+
+        response = JsonResponse({
+            "status": "returning_visitor",
+            "visitor_id": visitor_id,
+            "person": {
+                "first_name": person.first_name,
+                "email": person.email,
+            },
+            "conversation_id": str(conversation.pk) if conversation else None,
+            "messages": messages_data,
+        })
+        response.set_cookie(
+            self.VISITOR_COOKIE_NAME,
+            visitor_id,
+            max_age=self.VISITOR_COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="Lax",
+        )
+        return response
+
+    def post(self, request):
+        """Send a message from visitor.
+
+        First message requires: email, first_name, message
+        Subsequent messages require: message (visitor identified by cookie)
+        """
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        visitor_id = self.get_visitor_id(request)
+        message_text = data.get("message", "").strip()
+
+        if not message_text:
+            return JsonResponse({"error": "Message is required"}, status=400)
+
+        from django_parties.models import Person, LeadStatusEvent
+        from django_communication.models import (
+            Conversation,
+            ConversationStatus,
+            Message,
+            ParticipantRole,
+        )
+        from django_communication.services import (
+            create_conversation,
+            ensure_conversation_participant,
+            send_in_conversation,
+        )
+        from django.contrib.contenttypes.models import ContentType
+        from django.db import transaction
+
+        # Message channel and direction values (string-based choices)
+        CHANNEL_IN_APP = "in_app"
+        DIRECTION_INBOUND = "inbound"
+
+        # Find or create person for this visitor
+        person = None
+        try:
+            person = Person.objects.get(
+                visitor_id=visitor_id,
+                deleted_at__isnull=True,
+            )
+        except Person.DoesNotExist:
+            pass
+
+        # If no existing person, require email and name for first message
+        if not person:
+            email = data.get("email", "").strip().lower()
+            first_name = data.get("first_name", "").strip()
+
+            if not email or not first_name:
+                return JsonResponse({
+                    "error": "First message requires email and first_name",
+                    "needs_registration": True,
+                }, status=400)
+
+            # Check if email already exists (different visitor_id)
+            existing_person = Person.objects.filter(
+                email__iexact=email,
+                deleted_at__isnull=True,
+            ).first()
+
+            if existing_person:
+                # Link this visitor_id to existing person
+                if not existing_person.visitor_id:
+                    existing_person.visitor_id = visitor_id
+                    existing_person.save(update_fields=["visitor_id", "updated_at"])
+                person = existing_person
+            else:
+                # Create new lead
+                with transaction.atomic():
+                    person = Person.objects.create(
+                        first_name=first_name,
+                        last_name=data.get("last_name", "").strip(),
+                        email=email,
+                        visitor_id=visitor_id,
+                        lead_status="new",
+                        lead_source="website_chat",
+                        notes=f"Lead from website chat widget",
+                    )
+
+                    LeadStatusEvent.objects.create(
+                        person=person,
+                        from_status="",
+                        to_status="new",
+                        note="Lead captured via website chat widget",
+                    )
+
+        # Find or create conversation for this person
+        person_ct = ContentType.objects.get_for_model(Person)
+        conversation = Conversation.objects.filter(
+            related_content_type=person_ct,
+            related_object_id=str(person.pk),
+            status=ConversationStatus.ACTIVE,
+        ).first()
+
+        if not conversation:
+            conversation = create_conversation(
+                subject=f"Website Chat - {person.first_name}",
+                participants=[(person, ParticipantRole.CUSTOMER)],
+                related_object=person,
+                primary_channel=CHANNEL_IN_APP,
+            )
+
+        # Send message in conversation
+        message = send_in_conversation(
+            conversation=conversation,
+            sender_person=person,
+            body_text=message_text,
+            channel=CHANNEL_IN_APP,
+            direction=DIRECTION_INBOUND,
+        )
+
+        response = JsonResponse({
+            "status": "success",
+            "message_id": str(message.pk),
+            "conversation_id": str(conversation.pk),
+            "visitor_id": visitor_id,
+        })
+        response.set_cookie(
+            self.VISITOR_COOKIE_NAME,
+            visitor_id,
+            max_age=self.VISITOR_COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="Lax",
+        )
+        return response

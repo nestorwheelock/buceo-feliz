@@ -42,6 +42,9 @@ urlpatterns = [
     # Public pages (agreement signing, medical questionnaire)
     path("sign/", include("diveops.operations.urls.public")),
 
+    # Public API (chat widget, etc.)
+    path("public/", include("diveops.operations.public_urls")),
+
     # Store
     path("shop/", include("diveops.store.urls", namespace="store")),
 

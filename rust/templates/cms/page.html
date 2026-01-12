@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}{{ seo_title }}{% endblock %}
+
+{% block meta_description %}{{ seo_description }}{% endblock %}
+
+{% block extra_head %}
+{% if has_og_image %}
+<meta property="og:image" content="{{ og_image_url }}">
+{% endif %}
+<meta name="robots" content="{{ robots }}">
+{% endblock %}
+
+{% block content %}
+<div class="cms-page">
+    {% for block in blocks %}
+    {% include "components/blocks/block.html" %}
+    {% endfor %}
+</div>
+{% endblock %}

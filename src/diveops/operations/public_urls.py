@@ -16,6 +16,12 @@ urlpatterns = [
         public_views.LeadOnboardingView.as_view(),
         name="lead-onboarding",
     ),
+    # Public chat widget API (creates leads and conversations)
+    path(
+        "chat/",
+        public_views.PublicChatAPIView.as_view(),
+        name="chat-api",
+    ),
     # Public agreement signing (token-based, rate-limited)
     path("<str:token>/", public_views.PublicSigningView.as_view(), name="sign"),
     # Public medical questionnaire (UUID-based)

@@ -62,5 +62,21 @@ services:
       redis:
         condition: service_healthy
 
+  # Rust frontend (public pages)
+  rust:
+    build:
+      context: ./rust
+      dockerfile: Dockerfile
+    container_name: diveops_rust
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-diveops}
+      - BIND_ADDR=0.0.0.0:8080
+      - RUST_LOG=happydiving_web=debug,tower_http=debug
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   postgres_data:

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Happy Diving{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Scuba diving adventures in the Caribbean - courses, fun dives, and cenote explorations{% endblock %}">
+    {% block extra_head %}{% endblock %}
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="text-2xl font-bold text-primary-600 flex items-center">
+                    <svg class="w-8 h-8 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
+                    Happy Diving
+                </a>
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="/" class="text-gray-600 hover:text-primary-600 transition-colors">Home</a>
+                    <a href="/blog/" class="text-gray-600 hover:text-primary-600 transition-colors">Blog</a>
+                    <a href="/courses/" class="text-gray-600 hover:text-primary-600 transition-colors">Courses</a>
+                    <a href="/about/" class="text-gray-600 hover:text-primary-600 transition-colors">About</a>
+                    <a href="/contact/" class="text-gray-600 hover:text-primary-600 transition-colors">Contact</a>
+                    <a href="/portal/" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
+                        Portal
+                    </a>
+                </nav>
+                <!-- Mobile menu button -->
+                <button id="mobile-menu-btn" class="md:hidden text-gray-600 hover:text-gray-900">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+            <!-- Mobile menu -->
+            <div id="mobile-menu" class="hidden md:hidden pb-4">
+                <nav class="flex flex-col space-y-2">
+                    <a href="/" class="text-gray-600 hover:text-primary-600 py-2">Home</a>
+                    <a href="/blog/" class="text-gray-600 hover:text-primary-600 py-2">Blog</a>
+                    <a href="/courses/" class="text-gray-600 hover:text-primary-600 py-2">Courses</a>
+                    <a href="/about/" class="text-gray-600 hover:text-primary-600 py-2">About</a>
+                    <a href="/contact/" class="text-gray-600 hover:text-primary-600 py-2">Contact</a>
+                    <a href="/portal/" class="bg-primary-600 text-white px-4 py-2 rounded-lg text-center">Portal</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                <!-- Brand -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Happy Diving</h3>
+                    <p class="text-gray-400 text-sm">
+                        Your gateway to underwater adventures in the Mexican Caribbean.
+                    </p>
+                </div>
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="/courses/" class="hover:text-white">Courses</a></li>
+                        <li><a href="/blog/" class="hover:text-white">Blog</a></li>
+                        <li><a href="/about/" class="hover:text-white">About Us</a></li>
+                        <li><a href="/contact/" class="hover:text-white">Contact</a></li>
+                    </ul>
+                </div>
+                <!-- Services -->
+                <div>
+                    <h4 class="font-semibold mb-4">Services</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="/courses/" class="hover:text-white">PADI Certification</a></li>
+                        <li><a href="/" class="hover:text-white">Fun Dives</a></li>
+                        <li><a href="/" class="hover:text-white">Cenote Tours</a></li>
+                        <li><a href="/" class="hover:text-white">Night Dives</a></li>
+                    </ul>
+                </div>
+                <!-- Contact -->
+                <div>
+                    <h4 class="font-semibold mb-4">Contact</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li>Puerto Morelos, Mexico</li>
+                        <li>info@happydiving.mx</li>
+                        <li>+52 (998) 123-4567</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
+                <p>&copy; 2025 Happy Diving. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+    </script>
+
+    <!-- Chat Widget -->
+    <div id="chat-widget">
+        <!-- Chat Bubble Button -->
+        <button id="chat-bubble" class="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 transition-all duration-300 flex items-center justify-center z-50 hover:scale-110">
+            <svg id="chat-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            <svg id="close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="fixed bottom-24 right-6 w-80 sm:w-96 bg-white rounded-lg shadow-2xl hidden z-50 flex flex-col overflow-hidden" style="max-height: 500px;">
+            <!-- Header -->
+            <div class="bg-primary-600 text-white px-4 py-3 flex items-center justify-between">
+                <div>
+                    <h3 class="font-semibold">Chat with Us</h3>
+                    <p class="text-xs text-primary-100">We typically reply in minutes</p>
+                </div>
+                <button id="chat-minimize" class="text-white/80 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50" style="min-height: 250px; max-height: 300px;">
+                <!-- Welcome message -->
+                <div class="flex items-start space-x-2">
+                    <div class="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white text-sm">HD</div>
+                    <div class="bg-white rounded-lg rounded-tl-none px-3 py-2 shadow-sm max-w-[80%]">
+                        <p class="text-sm text-gray-700">Hello! How can we help you today?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registration Form (shown for new visitors) -->
+            <div id="chat-registration" class="p-4 border-t bg-white">
+                <p class="text-sm text-gray-600 mb-3">To start chatting, please tell us a bit about yourself:</p>
+                <div class="space-y-2">
+                    <input type="text" id="chat-name" placeholder="Your name" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    <input type="email" id="chat-email" placeholder="Your email" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 border-t bg-white">
+                <div class="flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    <button id="chat-send" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Chat Widget Configuration
+            const CHAT_API_URL = '/public/chat/';
+
+            // Elements
+            const bubble = document.getElementById('chat-bubble');
+            const chatWindow = document.getElementById('chat-window');
+            const chatIcon = document.getElementById('chat-icon');
+            const closeIcon = document.getElementById('close-icon');
+            const minimize = document.getElementById('chat-minimize');
+            const messages = document.getElementById('chat-messages');
+            const registration = document.getElementById('chat-registration');
+            const input = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('chat-send');
+            const nameInput = document.getElementById('chat-name');
+            const emailInput = document.getElementById('chat-email');
+
+            // State
+            let isOpen = false;
+            let isRegistered = false;
+            let conversationId = null;
+
+            // Toggle chat window
+            function toggleChat() {
+                isOpen = !isOpen;
+                chatWindow.classList.toggle('hidden', !isOpen);
+                chatIcon.classList.toggle('hidden', isOpen);
+                closeIcon.classList.toggle('hidden', !isOpen);
+
+                if (isOpen) {
+                    loadConversation();
+                    input.focus();
+                }
+            }
+
+            bubble.addEventListener('click', toggleChat);
+            minimize.addEventListener('click', toggleChat);
+
+            // Load existing conversation
+            async function loadConversation() {
+                try {
+                    const response = await fetch(CHAT_API_URL, {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+
+                    if (data.status === 'returning_visitor') {
+                        isRegistered = true;
+                        registration.classList.add('hidden');
+                        conversationId = data.conversation_id;
+
+                        // Clear default welcome message and show real messages
+                        if (data.messages && data.messages.length > 0) {
+                            messages.innerHTML = '';
+                            data.messages.forEach(msg => {
+                                addMessage(msg.body, msg.direction === 'inbound' ? 'user' : 'staff', false);
+                            });
+                        }
+
+                        // Show welcome back message
+                        if (data.person && data.person.first_name) {
+                            const welcomeBack = document.createElement('div');
+                            welcomeBack.className = 'text-center text-xs text-gray-500 my-2';
+                            welcomeBack.textContent = `Welcome back, ${data.person.first_name}!`;
+                            messages.insertBefore(welcomeBack, messages.firstChild);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to load conversation:', error);
+                }
+            }
+
+            // Add message to chat
+            function addMessage(text, sender, animate = true) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-start space-x-2' + (sender === 'user' ? ' flex-row-reverse space-x-reverse' : '');
+
+                const avatar = document.createElement('div');
+                avatar.className = 'w-8 h-8 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0';
+                avatar.classList.add(sender === 'user' ? 'bg-gray-600' : 'bg-primary-600');
+                avatar.textContent = sender === 'user' ? 'You' : 'HD';
+
+                const bubble = document.createElement('div');
+                bubble.className = 'rounded-lg px-3 py-2 shadow-sm max-w-[80%]';
+                bubble.classList.add(sender === 'user' ? 'bg-primary-600 text-white rounded-tr-none' : 'bg-white rounded-tl-none');
+
+                const text_el = document.createElement('p');
+                text_el.className = 'text-sm';
+                text_el.textContent = text;
+
+                bubble.appendChild(text_el);
+                wrapper.appendChild(avatar);
+                wrapper.appendChild(bubble);
+
+                if (animate) {
+                    wrapper.style.opacity = '0';
+                    wrapper.style.transform = 'translateY(10px)';
+                }
+
+                messages.appendChild(wrapper);
+                messages.scrollTop = messages.scrollHeight;
+
+                if (animate) {
+                    setTimeout(() => {
+                        wrapper.style.transition = 'all 0.3s ease-out';
+                        wrapper.style.opacity = '1';
+                        wrapper.style.transform = 'translateY(0)';
+                    }, 10);
+                }
+            }
+
+            // Send message
+            async function sendMessage() {
+                const text = input.value.trim();
+                if (!text) return;
+
+                const payload = { message: text };
+
+                // Include registration info for first message
+                if (!isRegistered) {
+                    const name = nameInput.value.trim();
+                    const email = emailInput.value.trim();
+
+                    if (!name || !email) {
+                        nameInput.classList.toggle('border-red-500', !name);
+                        emailInput.classList.toggle('border-red-500', !email);
+                        return;
+                    }
+
+                    // Basic email validation
+                    if (!email.includes('@')) {
+                        emailInput.classList.add('border-red-500');
+                        return;
+                    }
+
+                    payload.first_name = name;
+                    payload.email = email;
+                }
+
+                // Add user message to UI immediately
+                addMessage(text, 'user');
+                input.value = '';
+                input.disabled = true;
+                sendBtn.disabled = true;
+
+                try {
+                    const response = await fetch(CHAT_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        isRegistered = true;
+                        registration.classList.add('hidden');
+                        conversationId = data.conversation_id;
+
+                        // Show confirmation for first message
+                        if (!isRegistered) {
+                            setTimeout(() => {
+                                addMessage("Thanks for reaching out! We'll get back to you shortly.", 'staff');
+                            }, 500);
+                        }
+                    } else {
+                        // Show error
+                        addMessage(data.error || 'Failed to send message. Please try again.', 'staff');
+                    }
+                } catch (error) {
+                    console.error('Failed to send message:', error);
+                    addMessage('Connection error. Please try again.', 'staff');
+                }
+
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            }
+
+            // Event listeners
+            sendBtn.addEventListener('click', sendMessage);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+
+            // Remove red border on input
+            nameInput.addEventListener('input', () => nameInput.classList.remove('border-red-500'));
+            emailInput.addEventListener('input', () => emailInput.classList.remove('border-red-500'));
+        })();
+    </script>
+</body>
+</html>
