@@ -195,12 +195,16 @@ jobs:
               sleep 5
             done
 
-            # First, fake any problematic migrations that already have tables created
+            # First, fake all diveops migrations that have tables already created
             echo "Checking and faking problematic migrations..."
             docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate diveops 0008_settlement_record --fake 2>/dev/null || true
             docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate diveops 0009_eligibility_override --fake 2>/dev/null || true
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate diveops 0010_commission_rule --fake 2>/dev/null || true
 
-            # Then run all migrations
+            # Fake all diveops migrations to catch any other issues
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate diveops --fake 2>/dev/null || true
+
+            # Then run all other migrations (non-diveops)
             docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput || {
               echo "Some migrations failed - check logs for details"
             }
