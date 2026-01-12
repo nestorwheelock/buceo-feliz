@@ -211,9 +211,9 @@ jobs:
             # Create or update superuser
             docker compose -f docker-compose.prod.yml exec -T web python -c "import os,django;os.environ.setdefault('DJANGO_SETTINGS_MODULE','diveops.settings.prod');django.setup();from django.contrib.auth import get_user_model;User=get_user_model();u=User.objects.filter(email='nestorwheelock@gmail.com').first();(u.set_password('admin123'),u.save()) if u else User.objects.create_superuser(username='admin',email='nestorwheelock@gmail.com',password='admin123');print('Done')" || echo "Failed to create/update superuser"
 
-            # Collect static files - fix permissions and collect
-            echo "Clearing staticfiles directory..."
-            docker compose -f docker-compose.prod.yml exec -T --user root web sh -c "rm -rf /app/staticfiles/* && chown -R 1000:1000 /app/staticfiles" 2>/dev/null || true
+            # Collect static files - fix permissions completely
+            echo "Clearing and recreating staticfiles directory..."
+            docker run --rm -v diveops_static_data:/app/staticfiles alpine sh -c "rm -rf /app/staticfiles/* && chmod 777 /app/staticfiles"
             echo "Running collectstatic..."
             docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput || echo "Collectstatic failed - check logs"
             echo "Staticfiles collected"
