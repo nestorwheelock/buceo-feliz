@@ -6,7 +6,8 @@ from django.contrib import admin
 from django.urls import include, path
 
 from diveops.core.impersonation import ImpersonateStartView, ImpersonateStopView
-from diveops.core.views import health_check, index
+from diveops.core.views import health_check
+from django_cms_core.urls import page_urlpatterns as cms_page_patterns
 
 urlpatterns = [
     # Health check
@@ -43,8 +44,8 @@ urlpatterns = [
     # Pricing
     path("pricing/", include("diveops.pricing.urls")),
 
-    # Homepage
-    path("", index, name="index"),
+    # CMS public pages (catch-all for slug-based pages)
+    path("", include(cms_page_patterns)),
 ]
 
 # Serve media files in development
