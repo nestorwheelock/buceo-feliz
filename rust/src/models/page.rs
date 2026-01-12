@@ -18,6 +18,7 @@ pub struct CmsPage {
     pub seo_title: String,
     pub seo_description: String,
     pub og_image_url: String,
+    pub featured_image_url: Option<String>,
     pub robots: String,
     pub published_snapshot: Option<serde_json::Value>,
     pub published_at: Option<DateTime<Utc>>,
@@ -54,6 +55,8 @@ pub struct ParsedPage {
     pub meta: PageMeta,
     pub blocks: Vec<Block>,
     pub template_key: String,
+    pub featured_image_url: Option<String>,
+    pub published_at: Option<DateTime<Utc>>,
 }
 
 impl CmsPage {
@@ -68,6 +71,8 @@ impl CmsPage {
             meta: snapshot.meta,
             blocks: snapshot.blocks,
             template_key: self.template_key,
+            featured_image_url: self.featured_image_url,
+            published_at: self.published_at,
         })
     }
 }

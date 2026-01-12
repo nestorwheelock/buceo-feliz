@@ -11,7 +11,7 @@ use axum::{
 };
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
-use tower_http::{compression::CompressionLayer, trace::TraceLayer};
+use tower_http::{compression::CompressionLayer, services::ServeDir, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod db;
@@ -64,6 +64,8 @@ async fn main() -> anyhow::Result<()> {
         // CMS pages (catch-all for slugs)
         .route("/", get(routes::cms::home))
         .route("/:slug/", get(routes::cms::page))
+        // Static files
+        .nest_service("/static", ServeDir::new("static"))
         // State and middleware
         .with_state(state)
         .layer(CompressionLayer::new())

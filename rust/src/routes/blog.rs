@@ -126,22 +126,28 @@ pub async fn detail(
     // Get related posts (same category)
     let related_posts = db::get_blog_posts(&state.db, None, 3, 0).await?;
 
-    let has_og_image = !parsed.meta.og_image_url.is_empty();
+    // Use featured_image_url from the page, fallback to og_image_url from meta
+    let og_image = parsed.featured_image_url.clone()
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            if parsed.meta.og_image_url.is_empty() {
+                None
+            } else {
+                Some(parsed.meta.og_image_url.clone())
+            }
+        });
+    let has_og_image = og_image.is_some();
 
     let template = BlogDetailTemplate {
         post: BlogPostSummary {
             slug: parsed.slug,
             title: parsed.title,
             excerpt: parsed.meta.seo_description.clone(),
-            featured_image_url: if parsed.meta.og_image_url.is_empty() {
-                None
-            } else {
-                Some(parsed.meta.og_image_url.clone())
-            },
+            featured_image_url: og_image.clone(),
             category_name: None,
             category_slug: None,
             category_color: None,
-            published_at: None,
+            published_at: parsed.published_at,
             reading_time_minutes: None,
         },
         blocks: parsed.blocks,
@@ -153,7 +159,7 @@ pub async fn detail(
             parsed.meta.seo_title
         },
         seo_description: parsed.meta.seo_description,
-        og_image_url: parsed.meta.og_image_url,
+        og_image_url: og_image.unwrap_or_default(),
         has_og_image,
     };
 
