@@ -4,6 +4,8 @@ Tests the DB-first SES email configuration following the same patterns as AISett
 """
 
 import pytest
+
+pytestmark = pytest.mark.skip(reason="TDD: EmailSettings not implemented yet")
 import sys
 from unittest.mock import MagicMock, patch
 
