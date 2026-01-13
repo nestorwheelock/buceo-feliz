@@ -35,6 +35,7 @@ import com.diveops.chat.data.BookingsRepository
 import com.diveops.chat.data.ChatRepository
 import com.diveops.chat.data.LocationRepository
 import com.diveops.chat.data.UpdateRepository
+import com.diveops.chat.location.LocationTrackingService
 import com.diveops.chat.ui.BookingsScreen
 import com.diveops.chat.ui.CallScreen
 import com.diveops.chat.ui.ChatScreen
@@ -116,6 +117,37 @@ class MainActivity : ComponentActivity() {
             }
         } else {
             Log.d(TAG, "Camera or microphone permission denied")
+        }
+    }
+
+    // Location permission handling
+    private var pendingLocationSettings: PendingLocationSettings? = null
+
+    data class PendingLocationSettings(
+        val visibility: String?,
+        val trackingEnabled: Boolean?,
+        val interval: Int?,
+        val onSuccess: () -> Unit
+    )
+
+    private val requestLocationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
+        if (fineLocationGranted || coarseLocationGranted) {
+            Log.d(TAG, "Location permissions granted")
+            pendingLocationSettings?.let { pending ->
+                // Start the tracking service
+                val interval = pending.interval ?: 60
+                LocationTrackingService.start(this, interval)
+                pending.onSuccess()
+                pendingLocationSettings = null
+            }
+        } else {
+            Log.d(TAG, "Location permission denied")
+            pendingLocationSettings = null
         }
     }
 
@@ -451,15 +483,76 @@ class MainActivity : ComponentActivity() {
                     onUpdateSettings = { visibility, trackingEnabled, interval ->
                         coroutineScope.launch {
                             isSaving = true
-                            locationRepository.updateSettings(
-                                visibility = visibility,
-                                isTrackingEnabled = trackingEnabled,
-                                trackingIntervalSeconds = interval
-                            ).fold(
-                                onSuccess = { settings = it },
-                                onFailure = { /* Handle error */ }
-                            )
-                            isSaving = false
+
+                            // Handle tracking service start/stop
+                            if (trackingEnabled == true) {
+                                // Check if we have location permissions
+                                val fineLocation = ContextCompat.checkSelfPermission(
+                                    this@MainActivity,
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                                )
+                                val coarseLocation = ContextCompat.checkSelfPermission(
+                                    this@MainActivity,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+
+                                if (fineLocation == PackageManager.PERMISSION_GRANTED ||
+                                    coarseLocation == PackageManager.PERMISSION_GRANTED) {
+                                    // Permissions granted, start tracking
+                                    LocationTrackingService.start(this@MainActivity, interval ?: 60)
+
+                                    // Save settings to server
+                                    locationRepository.updateSettings(
+                                        visibility = visibility,
+                                        isTrackingEnabled = trackingEnabled,
+                                        trackingIntervalSeconds = interval
+                                    ).fold(
+                                        onSuccess = { settings = it },
+                                        onFailure = { /* Handle error */ }
+                                    )
+                                    isSaving = false
+                                } else {
+                                    // Request permissions
+                                    pendingLocationSettings = PendingLocationSettings(
+                                        visibility = visibility,
+                                        trackingEnabled = trackingEnabled,
+                                        interval = interval,
+                                        onSuccess = {
+                                            coroutineScope.launch {
+                                                locationRepository.updateSettings(
+                                                    visibility = visibility,
+                                                    isTrackingEnabled = trackingEnabled,
+                                                    trackingIntervalSeconds = interval
+                                                ).fold(
+                                                    onSuccess = { settings = it },
+                                                    onFailure = { /* Handle error */ }
+                                                )
+                                                isSaving = false
+                                            }
+                                        }
+                                    )
+                                    requestLocationPermissionLauncher.launch(
+                                        arrayOf(
+                                            Manifest.permission.ACCESS_FINE_LOCATION,
+                                            Manifest.permission.ACCESS_COARSE_LOCATION
+                                        )
+                                    )
+                                }
+                            } else {
+                                // Tracking disabled, stop service
+                                LocationTrackingService.stop(this@MainActivity)
+
+                                // Save settings to server
+                                locationRepository.updateSettings(
+                                    visibility = visibility,
+                                    isTrackingEnabled = trackingEnabled,
+                                    trackingIntervalSeconds = interval
+                                ).fold(
+                                    onSuccess = { settings = it },
+                                    onFailure = { /* Handle error */ }
+                                )
+                                isSaving = false
+                            }
                         }
                     },
                     onBack = { navController.popBackStack() }
