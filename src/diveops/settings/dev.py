@@ -7,7 +7,9 @@ from .base import *  # noqa: F401, F403
 DEBUG = True
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "happydiving.mx", "buceofeliz.com"]
+ALLOWED_HOSTS = os.environ.get(
+    "ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,happydiving.mx,buceofeliz.com"
+).split(",")
 
 # Development database (use local PostgreSQL or Docker)
 DATABASES["default"]["HOST"] = os.environ.get("POSTGRES_HOST", "localhost")  # noqa: F405
@@ -43,6 +45,7 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://10.0.0.10:8000",
 ]
 
 # Logging - more verbose in development
