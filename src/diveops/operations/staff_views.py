@@ -11455,3 +11455,65 @@ class CannedResponseTagDeleteView(StaffPortalMixin, View):
         tag.delete()
         messages.success(request, f"Tag '{tag.name}' deleted.")
         return redirect("diveops:canned-response-tag-list")
+
+
+# =============================================================================
+# Shared Locations Views (GPS Tracking Map)
+# =============================================================================
+
+
+class SharedLocationsListView(StaffPortalMixin, TemplateView):
+    """Staff view for map of all shared locations."""
+
+    template_name = "diveops/staff/shared_locations.html"
+
+    def get_context_data(self, **kwargs):
+        """Add shared locations to context."""
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Shared Locations"
+        return context
+
+
+class SharedLocationsAPIView(StaffPortalMixin, View):
+    """API endpoint returning location data as JSON for map markers."""
+
+    def get(self, request):
+        from django.db.models import OuterRef, Subquery
+
+        from .models import LocationSharingPreference, LocationUpdate
+
+        # Get persons who are sharing location with staff visibility or above
+        sharing_person_ids = list(
+            LocationSharingPreference.objects.filter(
+                is_tracking_enabled=True,
+                visibility__in=[
+                    LocationSharingPreference.Visibility.STAFF,
+                    LocationSharingPreference.Visibility.TRIP,
+                    LocationSharingPreference.Visibility.BUDDIES,
+                    LocationSharingPreference.Visibility.PUBLIC,
+                ],
+            ).values_list("person_id", flat=True)
+        )
+
+        # Get the most recent location for each sharing person
+        # Use distinct on person_id ordered by -recorded_at
+        locations = (
+            LocationUpdate.objects.filter(person_id__in=sharing_person_ids)
+            .order_by("person_id", "-recorded_at")
+            .distinct("person_id")
+            .select_related("person")
+        )
+
+        data = []
+        for loc in locations:
+            data.append({
+                "id": str(loc.pk),
+                "latitude": float(loc.latitude),
+                "longitude": float(loc.longitude),
+                "person_name": f"{loc.person.first_name} {loc.person.last_name}",
+                "recorded_at": loc.recorded_at.isoformat(),
+                "accuracy_meters": float(loc.accuracy_meters) if loc.accuracy_meters else None,
+                "source": loc.source,
+            })
+
+        return JsonResponse({"locations": data})

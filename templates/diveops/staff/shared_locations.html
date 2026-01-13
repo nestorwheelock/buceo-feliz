@@ -1,0 +1,158 @@
+{% extends "diveops/staff/_base.html" %}
+{% load portal_ui_tags %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<style>
+#locations-map {
+    height: 600px;
+    width: 100%;
+    border-radius: 0.5rem;
+}
+.leaflet-popup-content {
+    margin: 8px 12px;
+}
+.leaflet-popup-content h3 {
+    margin: 0 0 4px 0;
+    font-weight: 600;
+}
+.leaflet-popup-content p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #666;
+}
+</style>
+{% endblock %}
+
+{% block staff_content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Shared Locations</h1>
+            <p class="text-gray-600">Live locations of divers who have enabled location sharing</p>
+        </div>
+        <button id="refresh-btn" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            {% icon "refresh-cw" "w-4 h-4 mr-2" %}
+            Refresh
+        </button>
+    </div>
+
+    <!-- Stats Card -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 p-2 rounded-lg bg-blue-100">
+                {% icon "map-pin" "w-6 h-6 text-blue-600" %}
+            </div>
+            <div class="ml-4">
+                <p class="text-2xl font-bold text-gray-900" id="location-count">-</p>
+                <p class="text-sm text-gray-500">Active Locations</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Location Map</h3>
+        </div>
+        <div class="p-4">
+            <div id="locations-map"></div>
+        </div>
+    </div>
+
+    <!-- No Locations Message (hidden by default) -->
+    <div id="no-locations" class="hidden bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                {% icon "info" "w-5 h-5 text-yellow-400" %}
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-yellow-800">No shared locations</h3>
+                <p class="mt-1 text-sm text-yellow-700">
+                    No divers are currently sharing their location with staff visibility.
+                    Divers can enable location sharing in the mobile app settings.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map centered on Cancun/Riviera Maya area
+    const map = L.map('locations-map').setView([21.1619, -86.8515], 12);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Store markers layer
+    let markersLayer = L.layerGroup().addTo(map);
+
+    // Function to load locations
+    async function loadLocations() {
+        try {
+            const response = await fetch('{% url "diveops:shared-locations-api" %}');
+            const data = await response.json();
+
+            // Clear existing markers
+            markersLayer.clearLayers();
+
+            // Update count
+            document.getElementById('location-count').textContent = data.locations.length;
+
+            if (data.locations.length === 0) {
+                document.getElementById('no-locations').classList.remove('hidden');
+            } else {
+                document.getElementById('no-locations').classList.add('hidden');
+
+                // Add markers for each location
+                const bounds = [];
+                data.locations.forEach(function(loc) {
+                    const marker = L.marker([loc.latitude, loc.longitude]);
+
+                    // Format the timestamp
+                    const recordedAt = new Date(loc.recorded_at);
+                    const timeStr = recordedAt.toLocaleString();
+
+                    // Create popup content
+                    const popupContent = `
+                        <h3>${loc.person_name}</h3>
+                        <p>Last updated: ${timeStr}</p>
+                        ${loc.accuracy_meters ? `<p>Accuracy: ${loc.accuracy_meters.toFixed(0)}m</p>` : ''}
+                        <p>Source: ${loc.source}</p>
+                    `;
+
+                    marker.bindPopup(popupContent);
+                    markersLayer.addLayer(marker);
+                    bounds.push([loc.latitude, loc.longitude]);
+                });
+
+                // Fit map to show all markers
+                if (bounds.length > 0) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+            }
+        } catch (error) {
+            console.error('Error loading locations:', error);
+        }
+    }
+
+    // Load locations on page load
+    loadLocations();
+
+    // Refresh button
+    document.getElementById('refresh-btn').addEventListener('click', function() {
+        loadLocations();
+    });
+
+    // Auto-refresh every 60 seconds
+    setInterval(loadLocations, 60000);
+});
+</script>
+{% endblock %}

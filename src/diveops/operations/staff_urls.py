@@ -372,4 +372,7 @@ urlpatterns = [
     path("help/", help_views.HelpCenterView.as_view(), name="help-center"),
     path("help/<slug:section>/", help_views.HelpSectionView.as_view(), name="help-section"),
     path("help/<slug:section>/<slug:article>/", help_views.HelpArticleView.as_view(), name="help-article"),
+    # Shared Locations (GPS tracking map)
+    path("shared-locations/", staff_views.SharedLocationsListView.as_view(), name="shared-locations-list"),
+    path("shared-locations/api/", staff_views.SharedLocationsAPIView.as_view(), name="shared-locations-api"),
 ]
