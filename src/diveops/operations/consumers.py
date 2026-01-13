@@ -63,13 +63,24 @@ class ChatConsumer(WebsocketConsumer):
             return
 
         # Join room group
-        async_to_sync(self.channel_layer.group_add)(
-            self.room_group_name,
-            self.channel_name
-        )
+        try:
+            async_to_sync(self.channel_layer.group_add)(
+                self.room_group_name,
+                self.channel_name
+            )
+        except Exception as e:
+            logger.exception(f"Failed to join channel group: {e}")
+            self.close()
+            return
 
         self.accept()
         logger.info(f"WebSocket connected: {self.room_group_name}")
+
+        # Send connection confirmation to client
+        self.send(text_data=json.dumps({
+            "type": "connection_established",
+            "room": self.room_group_name,
+        }))
 
     def disconnect(self, close_code):
         """Handle WebSocket disconnection."""

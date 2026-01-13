@@ -247,7 +247,10 @@ function staffChatWidget() {
 
             this.ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                if (data.type === 'new_message') {
+                console.log('Staff WebSocket message:', data);
+                if (data.type === 'connection_established') {
+                    console.log('Staff WebSocket room joined:', data.room);
+                } else if (data.type === 'new_message') {
                     this.messages.push({
                         id: data.message_id,
                         body: data.body || data.message,

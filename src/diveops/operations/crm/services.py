@@ -451,8 +451,8 @@ def broadcast_chat_message(
             visitor_room = f"chat_visitor_{visitor_id}"
             async_to_sync(channel_layer.group_send)(visitor_room, message_data)
 
-        logger.debug(
-            "Broadcast chat message via WebSocket",
+        logger.info(
+            f"Broadcast chat message via WebSocket to rooms: lead={lead_room}, conv={conversation_id}, visitor={visitor_id}",
             extra={
                 "person_id": person_id,
                 "visitor_id": visitor_id,

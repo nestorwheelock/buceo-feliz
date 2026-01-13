@@ -254,7 +254,9 @@
                     const data = JSON.parse(event.data);
                     console.log('WebSocket message:', data);
 
-                    if (data.type === 'new_message' && data.direction === 'outbound') {
+                    if (data.type === 'connection_established') {
+                        console.log('WebSocket room joined:', data.room);
+                    } else if (data.type === 'new_message' && data.direction === 'outbound') {
                         // Staff message received - add to chat
                         addMessage(data.message, 'staff', true);
                         lastMessageCount++;
