@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Download App | Happy Diving!{% endblock %}
+
+{% block meta_description %}Download the Happy Diving mobile app for Android{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-b from-primary-50 to-white py-12">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- App Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-24 h-24 bg-primary-600 rounded-2xl shadow-lg mb-6">
+                <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Happy Diving App</h1>
+            <p class="text-gray-600">Stay connected with your dive shop</p>
+        </div>
+
+        {% if has_apk %}
+        <!-- Download Card -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <!-- QR Code Section -->
+            <div class="p-8 text-center border-b border-gray-100">
+                <p class="text-sm text-gray-500 mb-4">Scan with your phone to download</p>
+                {% if !qr_code_data.is_empty() %}
+                <div class="inline-block p-4 bg-white rounded-xl shadow-sm">
+                    <img src="{{ qr_code_data }}" alt="QR Code for app download" class="w-48 h-48 mx-auto">
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Download Button Section -->
+            <div class="p-8 bg-gray-50">
+                <div class="text-center mb-6">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
+                        Version {{ version }}
+                    </span>
+                </div>
+
+                <a href="{{ download_url }}"
+                   class="flex items-center justify-center w-full bg-primary-600 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:bg-primary-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Download for Android
+                </a>
+
+                <p class="text-center text-xs text-gray-400 mt-4">
+                    {{ filename }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Installation Instructions -->
+        <div class="mt-8 bg-white rounded-xl p-6 shadow-md">
+            <h2 class="font-semibold text-gray-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Installation Instructions
+            </h2>
+            <ol class="space-y-3 text-sm text-gray-600">
+                <li class="flex items-start">
+                    <span class="flex-shrink-0 w-6 h-6 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-xs font-bold mr-3">1</span>
+                    <span>Download the APK file by tapping the button above or scanning the QR code</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="flex-shrink-0 w-6 h-6 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-xs font-bold mr-3">2</span>
+                    <span>Open your device's <strong>Settings</strong> &rarr; <strong>Security</strong></span>
+                </li>
+                <li class="flex items-start">
+                    <span class="flex-shrink-0 w-6 h-6 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-xs font-bold mr-3">3</span>
+                    <span>Enable <strong>"Install from unknown sources"</strong> for your browser</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="flex-shrink-0 w-6 h-6 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-xs font-bold mr-3">4</span>
+                    <span>Open the downloaded file and tap <strong>Install</strong></span>
+                </li>
+            </ol>
+        </div>
+
+        {% else %}
+        <!-- Coming Soon Card -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden p-8 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-6">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h2 class="text-xl font-semibold text-gray-900 mb-2">Coming Soon</h2>
+            <p class="text-gray-600 mb-6">Our mobile app is currently in development. Check back soon!</p>
+            <a href="/" class="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Back to Home
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Features Section -->
+        <div class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full mb-3">
+                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                </div>
+                <h3 class="font-medium text-gray-900">Chat Support</h3>
+                <p class="text-sm text-gray-500 mt-1">Message us anytime</p>
+            </div>
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full mb-3">
+                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h3 class="font-medium text-gray-900">Video Calls</h3>
+                <p class="text-sm text-gray-500 mt-1">Face-to-face support</p>
+            </div>
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full mb-3">
+                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                </div>
+                <h3 class="font-medium text-gray-900">Notifications</h3>
+                <p class="text-sm text-gray-500 mt-1">Stay informed</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
