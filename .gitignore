@@ -11,7 +11,8 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
+# Python downloads folder (not our app downloads)
+/downloads/
 eggs/
 .eggs/
 lib64/
