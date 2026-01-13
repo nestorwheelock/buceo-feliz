@@ -103,7 +103,8 @@ services:
       - RUST_LOG=happydiving_web=info,tower_http=info
       - BIND_ADDR=0.0.0.0:8080
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-    # Note: Rust image has its own static files built in, no volume mount needed
+    volumes:
+      - downloads_data:/app/static/downloads
     deploy:
       resources:
         limits:
@@ -161,6 +162,7 @@ volumes:
   certs_data:
   certbot_www:
   nginx_cache:
+  downloads_data:
 
 networks:
   diveops_network:
