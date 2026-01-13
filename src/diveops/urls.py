@@ -4,8 +4,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic import TemplateView
-
 from diveops.core.impersonation import ImpersonateStartView, ImpersonateStopView
 from diveops.core.views import health_check, BlogListView, BlogDetailView
 from django_cms_core.urls import page_urlpatterns as cms_page_patterns
@@ -61,10 +59,7 @@ urlpatterns = [
     # Blog
     path("blog/", include((blog_urlpatterns, "blog"), namespace="blog")),
 
-    # Android app download
-    path("app/", TemplateView.as_view(template_name="downloads/android-app.html"), name="android-app"),
-
-    # CMS public pages (catch-all for slug-based pages)
+    # CMS public pages (catch-all for slug-based pages, includes /app/)
     path("", include(cms_page_patterns)),
 ]
 
