@@ -402,6 +402,7 @@ def broadcast_chat_message(
     message_id: str = None,
     message_text: str = "",
     direction: str = "inbound",
+    status: str = "sent",
     created_at: str = None,
 ):
     """Broadcast a chat message via WebSocket.
@@ -415,6 +416,7 @@ def broadcast_chat_message(
         message_id: UUID of the Message
         message_text: The message body
         direction: 'inbound' (from visitor) or 'outbound' (from staff)
+        status: Message status (sent, delivered, read, etc.)
         created_at: ISO timestamp of when message was created
     """
     import logging
@@ -434,6 +436,7 @@ def broadcast_chat_message(
             "message_id": message_id,
             "message": message_text,
             "direction": direction,
+            "status": status,
             "created_at": created_at or timezone.now().isoformat(),
         }
 

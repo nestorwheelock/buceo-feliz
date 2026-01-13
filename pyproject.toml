@@ -23,6 +23,8 @@ dependencies = [
     "Pillow>=10.0",
     "weasyprint>=60.0",
     "python-json-logger>=2.0",
+    "djangorestframework>=3.14",
+    "firebase-admin>=6.4",
 ]
 
 [project.optional-dependencies]

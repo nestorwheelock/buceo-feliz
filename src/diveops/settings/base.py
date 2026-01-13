@@ -66,6 +66,8 @@ PRIMITIVES_APPS = [
 THIRD_PARTY_APPS = [
     "channels",
     "django_portal_ui",
+    "rest_framework",
+    "rest_framework.authtoken",
 ]
 
 # Local apps

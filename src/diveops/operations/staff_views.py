@@ -9275,6 +9275,7 @@ class LeadSendMessageView(StaffPortalMixin, View):
                 message_id=str(msg.pk),
                 message_text=message_text,
                 direction="outbound",
+                status=msg.status,
                 created_at=msg.created_at.isoformat(),
             )
 

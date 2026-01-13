@@ -884,6 +884,7 @@ class PublicChatAPIView(View):
                     "id": str(msg.pk),
                     "direction": msg.direction,
                     "body": msg.body_text,
+                    "status": msg.status,
                     "created_at": msg.created_at.isoformat(),
                     "sender": "you" if msg.direction == "inbound" else "staff",
                 })
@@ -1033,8 +1034,22 @@ class PublicChatAPIView(View):
             message_id=str(message.pk),
             message_text=message_text,
             direction="inbound",
+            status=message.status,
             created_at=message.created_at.isoformat(),
         )
+
+        # Send FCM push notifications to staff
+        try:
+            from .services.fcm import notify_staff_of_new_message
+            notify_staff_of_new_message(
+                person=person,
+                message_text=message_text,
+                conversation_id=str(conversation.pk),
+            )
+        except Exception as e:
+            # Don't fail the request if FCM fails
+            import logging
+            logging.getLogger(__name__).exception(f"FCM notification failed: {e}")
 
         response = JsonResponse({
             "status": "success",

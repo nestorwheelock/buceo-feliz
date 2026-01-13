@@ -37,6 +37,7 @@ urlpatterns = [
     # Staff Chat Widget API
     path("api/chat/conversations/", chat_api_views.StaffChatConversationsAPIView.as_view(), name="api-chat-conversations"),
     path("api/chat/conversations/<uuid:person_id>/messages/", chat_api_views.StaffChatMessagesAPIView.as_view(), name="api-chat-messages"),
+    path("api/chat/conversations/<uuid:person_id>/mark-read/", chat_api_views.MarkMessagesReadAPIView.as_view(), name="api-chat-mark-read"),
     path("api/canned-responses/", staff_views.CannedResponseListAPIView.as_view(), name="api-canned-responses"),
     path("api/canned-responses/<uuid:pk>/render/", staff_views.CannedResponseRenderAPIView.as_view(), name="api-canned-response-render"),
     path("api/conversation/<uuid:conversation_id>/send-agreement/", staff_views.ConversationSendAgreementAPIView.as_view(), name="api-conversation-send-agreement"),

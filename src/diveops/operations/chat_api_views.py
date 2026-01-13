@@ -176,8 +176,45 @@ class StaffChatMessagesAPIView(StaffPortalMixin, View):
                 "id": str(msg.pk),
                 "body": msg.body_text,
                 "direction": msg.direction,
+                "status": msg.status,
                 "time": time_str,
                 "created_at": msg.created_at.isoformat(),
+                "sent_at": msg.sent_at.isoformat() if msg.sent_at else None,
+                "delivered_at": msg.delivered_at.isoformat() if msg.delivered_at else None,
+                "read_at": msg.read_at.isoformat() if msg.read_at else None,
             })
 
         return JsonResponse({"messages": result})
+
+
+class MarkMessagesReadAPIView(StaffPortalMixin, View):
+    """Mark messages as read when viewed by staff."""
+
+    def post(self, request, person_id):
+        from django.utils import timezone
+        from django.views.decorators.csrf import csrf_exempt
+        import json
+
+        person_ct = ContentType.objects.get_for_model(Person)
+
+        # Find conversation for this person
+        conversation = Conversation.objects.filter(
+            related_content_type=person_ct,
+            related_object_id=str(person_id),
+            deleted_at__isnull=True,
+        ).first()
+
+        if not conversation:
+            return JsonResponse({"error": "Conversation not found"}, status=404)
+
+        # Mark all inbound messages as read (staff is reading visitor's messages)
+        updated = Message.objects.filter(
+            conversation=conversation,
+            direction="inbound",
+            status__in=["queued", "sending", "sent", "delivered"],
+        ).update(
+            status="read",
+            read_at=timezone.now(),
+        )
+
+        return JsonResponse({"marked_read": updated})

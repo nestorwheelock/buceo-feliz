@@ -45,6 +45,9 @@ urlpatterns = [
     # Public API (chat widget, etc.)
     path("public/", include("diveops.operations.public_urls")),
 
+    # Mobile API (Android/iOS staff chat app)
+    path("api/mobile/", include("diveops.operations.mobile_urls", namespace="mobile")),
+
     # Store
     path("shop/", include("diveops.store.urls", namespace="store")),
 

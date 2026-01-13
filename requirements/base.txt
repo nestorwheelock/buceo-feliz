@@ -34,3 +34,9 @@ requests>=2.31
 
 # Date/time
 python-dateutil>=2.8
+
+# REST API / Mobile API
+djangorestframework>=3.14
+
+# Push Notifications (Firebase Cloud Messaging)
+firebase-admin>=6.4
