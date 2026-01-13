@@ -51,7 +51,7 @@ services:
       - diveops_network
 
   web:
-    image: ghcr.io/nestorwheelock/django-diveops:latest
+    image: ghcr.io/nestorwheelock/buceo-feliz:latest
     container_name: diveops_web
     environment:
       - DJANGO_SETTINGS_MODULE=diveops.settings.prod
@@ -97,7 +97,7 @@ services:
       - diveops_network
 
   rust:
-    image: ghcr.io/nestorwheelock/django-diveops-rust:latest
+    image: ghcr.io/nestorwheelock/buceo-feliz-rust:latest
     container_name: diveops_rust
     environment:
       - RUST_LOG=happydiving_web=info,tower_http=info
