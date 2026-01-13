@@ -33,7 +33,8 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8000\"")
+            // Use local network IP for testing on real device
+            buildConfigField("String", "BASE_URL", "\"http://10.0.0.10:8000\"")
         }
     }
     compileOptions {
