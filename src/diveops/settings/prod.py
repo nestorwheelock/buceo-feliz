@@ -23,7 +23,8 @@ SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # Database connection pooling
-DATABASES["default"]["CONN_MAX_AGE"] = 600  # noqa: F405
+# Reduced from 600s to 60s to prevent connection exhaustion on small VPS
+DATABASES["default"]["CONN_MAX_AGE"] = 60  # noqa: F405
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True  # noqa: F405
 
 # Cache - Redis
