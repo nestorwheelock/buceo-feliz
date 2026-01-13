@@ -18,6 +18,7 @@ mod cache;
 mod db;
 mod error;
 mod models;
+pub mod pricing;
 mod routes;
 
 use cache::{start_cache_warmer, AppCache};
@@ -81,6 +82,8 @@ async fn main() -> anyhow::Result<()> {
         // App download page (MUST be before slug catch-all)
         .route("/app", get(routes::app::download))
         .route("/app/", get(routes::app::download))
+        // Pricing API (called by Django)
+        .nest("/api/pricing", pricing::router())
         // CMS pages (catch-all for slugs)
         .route("/", get(routes::cms::home))
         .route("/:slug/", get(routes::cms::page))

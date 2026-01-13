@@ -2,11 +2,16 @@
 
 Functions to calculate costs from primitive data sources
 (Agreement terms, Price rules, etc.)
+
+When USE_RUST_PRICING is enabled, calculations are delegated to the
+high-performance Rust service for improved performance.
 """
 
+import logging
 from decimal import Decimal, ROUND_HALF_EVEN
 from typing import NamedTuple
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
@@ -19,6 +24,8 @@ from .exceptions import (
     CurrencyMismatchError,
     ConfigurationError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class BoatCostResult(NamedTuple):
@@ -63,6 +70,8 @@ def calculate_boat_cost(
     Looks up the vendor agreement for the given dive site and calculates
     the total and per-diver boat cost based on the tier structure.
 
+    When USE_RUST_PRICING is enabled, delegates to the Rust pricing service.
+
     Args:
         dive_site: DiveSite instance
         diver_count: Number of divers on the excursion
@@ -75,6 +84,39 @@ def calculate_boat_cost(
         MissingVendorAgreementError: No agreement found for site
         ConfigurationError: Agreement terms missing required fields
     """
+    # Delegate to Rust if enabled
+    if getattr(settings, "USE_RUST_PRICING", False):
+        try:
+            from . import rust_client
+
+            as_of_str = as_of.isoformat() if as_of else None
+            result = rust_client.calculate_boat_cost(
+                dive_site_id=dive_site.pk,
+                diver_count=diver_count,
+                as_of=as_of_str,
+            )
+            return BoatCostResult(
+                total=Money(result.total_amount, result.total_currency),
+                per_diver=Money(result.per_diver_amount, result.per_diver_currency),
+                base_cost=Money(result.base_cost_amount, result.base_cost_currency),
+                overage_count=result.overage_count,
+                overage_per_diver=Money(result.overage_per_diver_amount, result.overage_per_diver_currency),
+                included_divers=result.included_divers,
+                diver_count=result.diver_count,
+                agreement_id=str(result.agreement_id) if result.agreement_id else None,
+            )
+        except rust_client.RustPricingUnavailable:
+            logger.warning("Rust pricing unavailable, falling back to Python")
+        except rust_client.RustPricingError as e:
+            if e.error_type == "missing_vendor_agreement":
+                raise MissingVendorAgreementError(
+                    scope_type="vendor_pricing",
+                    scope_ref=f"DiveSite:{dive_site.pk}",
+                ) from e
+            elif e.error_type == "configuration_error":
+                raise ConfigurationError(e.message) from e
+            raise
+
     if diver_count <= 0:
         raise ConfigurationError("Diver count must be positive")
 
@@ -154,6 +196,8 @@ def calculate_gas_fills(
 ) -> GasFillResult:
     """Calculate gas fill costs from vendor agreement.
 
+    When USE_RUST_PRICING is enabled, delegates to the Rust pricing service.
+
     Args:
         dive_shop: Organization (dive shop)
         gas_type: Type of gas (air, ean32, ean36, trimix)
@@ -168,6 +212,41 @@ def calculate_gas_fills(
         MissingVendorAgreementError: No gas vendor agreement found
         ConfigurationError: Agreement terms missing gas pricing
     """
+    # Delegate to Rust if enabled
+    if getattr(settings, "USE_RUST_PRICING", False):
+        try:
+            from . import rust_client
+
+            as_of_str = as_of.isoformat() if as_of else None
+            result = rust_client.calculate_gas_fills(
+                dive_shop_id=dive_shop.pk,
+                gas_type=gas_type,
+                fills_count=fills_count,
+                customer_charge_override=customer_charge_amount,
+                as_of=as_of_str,
+            )
+            return GasFillResult(
+                cost_per_fill=Money(result.cost_per_fill_amount, result.cost_per_fill_currency),
+                charge_per_fill=Money(result.charge_per_fill_amount, result.charge_per_fill_currency),
+                total_cost=Money(result.total_cost_amount, result.total_cost_currency),
+                total_charge=Money(result.total_charge_amount, result.total_charge_currency),
+                fills_count=result.fills_count,
+                gas_type=result.gas_type,
+                agreement_id=str(result.agreement_id) if result.agreement_id else None,
+                price_rule_id=str(result.price_rule_id) if result.price_rule_id else None,
+            )
+        except rust_client.RustPricingUnavailable:
+            logger.warning("Rust pricing unavailable, falling back to Python")
+        except rust_client.RustPricingError as e:
+            if e.error_type == "missing_vendor_agreement":
+                raise MissingVendorAgreementError(
+                    scope_type="gas_vendor_pricing",
+                    scope_ref=f"Organization:{dive_shop.pk}",
+                ) from e
+            elif e.error_type == "configuration_error":
+                raise ConfigurationError(e.message) from e
+            raise
+
     if fills_count <= 0:
         raise ConfigurationError("Fills count must be positive")
 
@@ -247,7 +326,7 @@ def resolve_component_pricing(
     3. Organization-specific
     4. Global
 
-    Also looks up vendor cost from vendor agreements if available.
+    When USE_RUST_PRICING is enabled, delegates to the Rust pricing service.
 
     Args:
         catalog_item: CatalogItem to price
@@ -259,6 +338,37 @@ def resolve_component_pricing(
     Returns:
         dict with cost, charge, price_rule_id, vendor_agreement_id
     """
+    # Delegate to Rust if enabled
+    if getattr(settings, "USE_RUST_PRICING", False):
+        try:
+            from . import rust_client
+
+            as_of_str = as_of.isoformat() if as_of else None
+            result = rust_client.resolve_component_pricing(
+                catalog_item_id=catalog_item.pk,
+                dive_shop_id=dive_shop.pk if dive_shop else None,
+                party_id=party.pk if party else None,
+                agreement_id=agreement.pk if agreement else None,
+                as_of=as_of_str,
+            )
+            return {
+                "charge_amount": result.charge_amount,
+                "charge_currency": result.charge_currency,
+                "cost_amount": result.cost_amount,
+                "cost_currency": result.cost_currency,
+                "price_rule_id": str(result.price_rule_id),
+                "has_cost": result.has_cost,
+            }
+        except rust_client.RustPricingUnavailable:
+            logger.warning("Rust pricing unavailable, falling back to Python")
+        except rust_client.RustPricingError as e:
+            if e.error_type == "missing_price":
+                raise MissingPriceError(
+                    catalog_item_id=str(catalog_item.pk),
+                    context=catalog_item.display_name,
+                ) from e
+            raise
+
     from diveops.pricing.models import Price
 
     check_time = as_of or timezone.now()
@@ -314,6 +424,8 @@ def allocate_shared_costs(
     Uses banker's rounding, then distributes any remainder (due to rounding)
     to the first N divers.
 
+    When USE_RUST_PRICING is enabled, delegates to the Rust pricing service.
+
     Args:
         shared_total: Total amount to allocate
         diver_count: Number of divers to split among
@@ -327,6 +439,21 @@ def allocate_shared_costs(
         allocate_shared_costs(Decimal("100"), 3)
         # Returns (Decimal("33.33"), [Decimal("33.34"), Decimal("33.33"), Decimal("33.33")])
     """
+    # Delegate to Rust if enabled
+    if getattr(settings, "USE_RUST_PRICING", False):
+        try:
+            from . import rust_client
+
+            return rust_client.allocate_shared_costs(
+                shared_total=shared_total,
+                diver_count=diver_count,
+                currency=currency,
+            )
+        except rust_client.RustPricingUnavailable:
+            logger.warning("Rust pricing unavailable, falling back to Python")
+        except rust_client.RustPricingError:
+            logger.warning("Rust pricing error, falling back to Python")
+
     if diver_count <= 0:
         return Decimal("0"), []
 

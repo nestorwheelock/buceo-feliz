@@ -1,7 +1,8 @@
 //! In-memory caching using moka
 //!
-//! Provides application-level caching for CMS pages and blog content.
+//! Provides application-level caching for CMS pages, blog content, and pricing data.
 //! Blog content rarely changes after publishing, so aggressive TTLs are used.
+//! Pricing agreements are cached with 1-hour TTL since they rarely change.
 
 use moka::future::Cache;
 use serde::Serialize;
@@ -13,8 +14,9 @@ use tracing::{info, warn};
 
 use crate::db::queries;
 use crate::models::{BlogPostSummary, CmsSettings, ParsedPage};
+use crate::pricing::models::{Agreement, ContentType};
 
-/// Application cache holding parsed pages and blog listings
+/// Application cache holding parsed pages, blog listings, and pricing data
 #[derive(Clone)]
 pub struct AppCache {
     /// CMS pages (slug -> ParsedPage)
@@ -25,6 +27,10 @@ pub struct AppCache {
     pub blog_listings: Cache<String, Arc<Vec<BlogPostSummary>>>,
     /// CMS settings (singleton)
     pub settings: Cache<String, Arc<CmsSettings>>,
+    /// Pricing: Vendor agreements (cache_key -> Agreement)
+    pub agreements: Cache<String, Arc<Agreement>>,
+    /// Pricing: Content types ((app_label, model) -> ContentType)
+    pub content_types: Cache<String, Arc<ContentType>>,
 }
 
 impl AppCache {
@@ -57,7 +63,30 @@ impl AppCache {
                 .max_capacity(1)
                 .time_to_live(Duration::from_secs(30 * 60))
                 .build(),
+
+            // Pricing: Agreements: 200 entries, 1 hour TTL (rarely changes)
+            agreements: Cache::builder()
+                .max_capacity(200)
+                .time_to_live(Duration::from_secs(60 * 60))
+                .time_to_idle(Duration::from_secs(30 * 60))
+                .build(),
+
+            // Pricing: Content types: 50 entries, 24 hour TTL (almost never changes)
+            content_types: Cache::builder()
+                .max_capacity(50)
+                .time_to_live(Duration::from_secs(24 * 60 * 60))
+                .build(),
         }
+    }
+
+    /// Generate cache key for agreement lookup
+    pub fn agreement_key(scope_type: &str, content_type_id: i32, object_id: &str) -> String {
+        format!("{}:{}:{}", scope_type, content_type_id, object_id)
+    }
+
+    /// Generate cache key for content type lookup
+    pub fn content_type_key(app_label: &str, model: &str) -> String {
+        format!("{}:{}", app_label, model)
     }
 
     /// Get cache statistics for monitoring
@@ -67,6 +96,8 @@ impl AppCache {
             blog_posts_size: self.blog_posts.entry_count(),
             blog_listings_size: self.blog_listings.entry_count(),
             settings_cached: self.settings.entry_count() > 0,
+            agreements_size: self.agreements.entry_count(),
+            content_types_size: self.content_types.entry_count(),
         }
     }
 
@@ -76,6 +107,8 @@ impl AppCache {
         self.blog_posts.invalidate_all();
         self.blog_listings.invalidate_all();
         self.settings.invalidate_all();
+        self.agreements.invalidate_all();
+        self.content_types.invalidate_all();
         info!("All caches invalidated");
     }
 
@@ -110,6 +143,8 @@ pub struct CacheStats {
     pub blog_posts_size: u64,
     pub blog_listings_size: u64,
     pub settings_cached: bool,
+    pub agreements_size: u64,
+    pub content_types_size: u64,
 }
 
 /// Start background cache warmer
@@ -164,5 +199,41 @@ async fn warm_cache(cache: &AppCache, db: &PgPool) {
         Err(e) => warn!("Failed to warm blog listing cache: {}", e),
     }
 
+    // Warm pricing caches
+    warm_pricing_cache(cache, db).await;
+
     info!("Cache warm-up complete. Stats: {:?}", cache.stats());
+}
+
+/// Warm pricing-related caches (content types and agreements)
+async fn warm_pricing_cache(cache: &AppCache, db: &PgPool) {
+    use crate::pricing::queries as pricing_queries;
+
+    // Warm content types (needed for GenericFK resolution)
+    match pricing_queries::get_all_content_types(db).await {
+        Ok(types) => {
+            for ct in types {
+                let key = AppCache::content_type_key(&ct.app_label, &ct.model);
+                cache.content_types.insert(key, Arc::new(ct)).await;
+            }
+            info!("Warmed {} content types", cache.content_types.entry_count());
+        }
+        Err(e) => warn!("Failed to warm content types cache: {}", e),
+    }
+
+    // Warm active vendor agreements
+    match pricing_queries::get_active_vendor_agreements(db).await {
+        Ok(agreements) => {
+            for agreement in agreements {
+                let key = AppCache::agreement_key(
+                    &agreement.scope_type,
+                    agreement.scope_ref_content_type_id.unwrap_or(0),
+                    &agreement.scope_ref_id,
+                );
+                cache.agreements.insert(key, Arc::new(agreement)).await;
+            }
+            info!("Warmed {} agreements", cache.agreements.entry_count());
+        }
+        Err(e) => warn!("Failed to warm agreements cache: {}", e),
+    }
 }

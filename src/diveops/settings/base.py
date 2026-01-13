@@ -221,6 +221,12 @@ DIVE_SHOP_TIMEZONE = os.environ.get("DIVE_SHOP_TIMEZONE", "America/New_York")
 DIVE_SHOP_LATITUDE = float(os.environ.get("DIVE_SHOP_LATITUDE", "25.7617"))
 DIVE_SHOP_LONGITUDE = float(os.environ.get("DIVE_SHOP_LONGITUDE", "-80.1918"))
 
+# Rust Pricing Engine configuration
+# Set USE_RUST_PRICING=false to fall back to Python implementation
+USE_RUST_PRICING = os.environ.get("USE_RUST_PRICING", "true").lower() == "true"
+RUST_PRICING_URL = os.environ.get("RUST_PRICING_URL", "http://localhost:8080/api/pricing")
+RUST_PRICING_TIMEOUT = float(os.environ.get("RUST_PRICING_TIMEOUT", "5.0"))
+
 # Site configuration
 SITE_NAME = DIVE_SHOP_NAME
 STAFF_PORTAL_TITLE = f"{DIVE_SHOP_NAME} Staff"
@@ -294,6 +300,12 @@ PORTAL_UI = {
             "label": "Divers",
             "url": "diveops:diver-list",
             "icon": "users",
+        },
+        {
+            "section": "Dive Operations",
+            "label": "Shared Locations",
+            "url": "diveops:shared-locations-list",
+            "icon": "map-pin",
         },
         {
             "section": "CRM",
