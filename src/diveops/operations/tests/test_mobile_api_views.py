@@ -20,7 +20,7 @@ from rest_framework.authtoken.models import Token
 
 from django_parties.models import Person
 
-from diveops.models import (
+from diveops.operations.models import (
     AppVersion,
     Booking,
     Excursion,
