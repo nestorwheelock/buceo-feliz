@@ -193,32 +193,39 @@ class MobileConversationsView(View):
 
     @method_decorator(require_auth_token)
     def get(self, request):
-        person_ct = ContentType.objects.get_for_model(Person)
+        from django_communication.models import ConversationParticipant
 
-        # Get conversations linked to Person records
+        # Get all active conversations (not filtered by content type)
+        # This includes conversations for leads, divers, bookings, etc.
         conversations = (
-            Conversation.objects.filter(
-                related_content_type=person_ct,
-                deleted_at__isnull=True,
-            )
+            Conversation.objects.filter(deleted_at__isnull=True)
             .exclude(status=ConversationStatus.CLOSED)
             .select_related("related_content_type")
+            .prefetch_related("participants__person")
             .order_by("-updated_at")[:100]
         )
 
-        # Batch fetch persons
-        person_ids = [conv.related_object_id for conv in conversations]
-        persons_by_id = {
-            str(p.pk): p
-            for p in Person.objects.filter(
-                pk__in=person_ids,
-                deleted_at__isnull=True,
-            )
-        }
-
         result = []
         for conv in conversations:
-            person = persons_by_id.get(conv.related_object_id)
+            # Find the customer participant (the person we're chatting with)
+            customer_participant = conv.participants.filter(
+                role="customer",
+                person__deleted_at__isnull=True,
+            ).select_related("person").first()
+
+            if not customer_participant:
+                # Fallback: try to get person from related_object if it's a Person
+                person_ct = ContentType.objects.get_for_model(Person)
+                if conv.related_content_type == person_ct:
+                    person = Person.objects.filter(
+                        pk=conv.related_object_id,
+                        deleted_at__isnull=True,
+                    ).first()
+                else:
+                    continue
+            else:
+                person = customer_participant.person
+
             if not person:
                 continue
 
@@ -293,10 +300,10 @@ class MobileMessagesView(View):
         for msg in messages:
             result.append({
                 "id": str(msg.pk),
-                "body": msg.body_text,
-                "direction": msg.direction,
-                "status": msg.status,
-                "created_at": msg.created_at.isoformat(),
+                "body": msg.body_text or "",  # Ensure never None
+                "direction": msg.direction or "inbound",
+                "status": msg.status or "sent",
+                "created_at": msg.created_at.isoformat() if msg.created_at else None,
                 "sender_name": _get_sender_name(msg),
             })
 

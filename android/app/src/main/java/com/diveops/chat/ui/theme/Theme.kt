@@ -25,7 +25,7 @@ val OnSurface = Color(0xFF1E293B)
 // Chat colors
 val MessageOutbound = Color(0xFF0EA5E9)
 val MessageInbound = Color(0xFFE5E7EB)
-val UnreadBadge = Color(0xFFEF4444)
+val UnreadBadge = Color(0xFF22C55E)  // Green - happier like money
 
 private val LightColorScheme = lightColorScheme(
     primary = Primary,

@@ -195,18 +195,12 @@ jobs:
               sleep 5
             done
 
-            # Fake all migrations for all apps since database has existing tables
-            echo "Faking all migrations to match existing database state..."
-            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --fake 2>/dev/null || {
-              echo "Failed to fake all migrations, trying individual apps..."
-              docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate diveops --fake 2>/dev/null || true
-              docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate django_audit_log --fake 2>/dev/null || true
-              docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate auth --fake 2>/dev/null || true
-              docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate contenttypes --fake 2>/dev/null || true
-              docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate sessions --fake 2>/dev/null || true
-              docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate admin --fake 2>/dev/null || true
+            # Run database migrations
+            echo "Running database migrations..."
+            docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate 2>&1 || {
+              echo "Migration failed, check logs above"
             }
-            echo "Migration faking complete"
+            echo "Migrations complete"
 
             # Create or update superuser
             docker compose -f docker-compose.prod.yml exec -T web python -c "import os,django;os.environ.setdefault('DJANGO_SETTINGS_MODULE','diveops.settings.prod');django.setup();from django.contrib.auth import get_user_model;User=get_user_model();u=User.objects.filter(email='nestorwheelock@gmail.com').first();(u.set_password('admin123'),u.save()) if u else User.objects.create_superuser(username='admin',email='nestorwheelock@gmail.com',password='admin123');print('Done')" || echo "Failed to create/update superuser"
