@@ -9271,6 +9271,7 @@ class LeadSendMessageView(StaffPortalMixin, View):
             broadcast_chat_message(
                 person_id=str(lead.pk),
                 visitor_id=lead.visitor_id,
+                conversation_id=str(conversation.pk),
                 message_id=str(msg.pk),
                 message_text=message_text,
                 direction="outbound",

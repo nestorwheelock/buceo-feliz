@@ -231,12 +231,16 @@
 
             // WebSocket connection
             function connectWebSocket() {
-                if (!visitorId) {
-                    console.log('No visitor ID, cannot connect WebSocket');
+                // Prefer conversation_id (more reliable), fallback to visitor_id
+                let wsUrl;
+                if (conversationId) {
+                    wsUrl = `${WS_PROTOCOL}//${WS_HOST}/ws/chat/conversation/${conversationId}/`;
+                } else if (visitorId) {
+                    wsUrl = `${WS_PROTOCOL}//${WS_HOST}/ws/chat/visitor/${visitorId}/`;
+                } else {
+                    console.log('No conversation or visitor ID, cannot connect WebSocket');
                     return;
                 }
-
-                const wsUrl = `${WS_PROTOCOL}//${WS_HOST}/ws/chat/visitor/${visitorId}/`;
                 console.log('Connecting WebSocket:', wsUrl);
 
                 socket = new WebSocket(wsUrl);

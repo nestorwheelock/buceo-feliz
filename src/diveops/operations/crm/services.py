@@ -398,6 +398,7 @@ def broadcast_conversation_message(
 def broadcast_chat_message(
     person_id: str,
     visitor_id: str = None,
+    conversation_id: str = None,
     message_id: str = None,
     message_text: str = "",
     direction: str = "inbound",
@@ -405,11 +406,12 @@ def broadcast_chat_message(
 ):
     """Broadcast a chat message via WebSocket.
 
-    Sends to both visitor and lead room groups so both parties see the message.
+    Sends to visitor, lead, and conversation room groups so all parties see the message.
 
     Args:
         person_id: UUID of the Person (lead)
         visitor_id: Visitor ID cookie value (for visitor's room)
+        conversation_id: UUID of the Conversation (shared room for both parties)
         message_id: UUID of the Message
         message_text: The message body
         direction: 'inbound' (from visitor) or 'outbound' (from staff)
@@ -439,7 +441,12 @@ def broadcast_chat_message(
         lead_room = f"chat_lead_{person_id}"
         async_to_sync(channel_layer.group_send)(lead_room, message_data)
 
-        # Broadcast to visitor room (for the visitor's chat widget)
+        # Broadcast to conversation room (shared by both parties)
+        if conversation_id:
+            conversation_room = f"chat_conversation_{conversation_id}"
+            async_to_sync(channel_layer.group_send)(conversation_room, message_data)
+
+        # Broadcast to visitor room (legacy - for the visitor's chat widget)
         if visitor_id:
             visitor_room = f"chat_visitor_{visitor_id}"
             async_to_sync(channel_layer.group_send)(visitor_room, message_data)

@@ -1029,6 +1029,7 @@ class PublicChatAPIView(View):
         broadcast_chat_message(
             person_id=str(person.pk),
             visitor_id=visitor_id,
+            conversation_id=str(conversation.pk),
             message_id=str(message.pk),
             message_text=message_text,
             direction="inbound",
