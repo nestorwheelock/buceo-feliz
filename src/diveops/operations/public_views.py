@@ -863,7 +863,7 @@ class PublicChatAPIView(View):
             return self.add_cors_headers(response, request)
 
         # Find their conversation
-        from django_communication.models import Conversation, ConversationStatus, Message
+        from django_communication.models import Conversation, ConversationStatus, Message, MessageDirection
         from django.contrib.contenttypes.models import ContentType
 
         person_ct = ContentType.objects.get_for_model(Person)
@@ -886,7 +886,7 @@ class PublicChatAPIView(View):
                     "body": msg.body_text,
                     "status": msg.status,
                     "created_at": msg.created_at.isoformat(),
-                    "sender": "you" if msg.direction == "inbound" else "staff",
+                    "sender": "you" if msg.direction == MessageDirection.INBOUND else "staff",
                 })
 
         response = JsonResponse({
@@ -932,6 +932,7 @@ class PublicChatAPIView(View):
             Conversation,
             ConversationStatus,
             Message,
+            MessageDirection,
             ParticipantRole,
         )
         from django_communication.services import (
@@ -942,9 +943,8 @@ class PublicChatAPIView(View):
         from django.contrib.contenttypes.models import ContentType
         from django.db import transaction
 
-        # Message channel and direction values (string-based choices)
+        # Message channel value
         CHANNEL_IN_APP = "in_app"
-        DIRECTION_INBOUND = "inbound"
 
         # Find or create person for this visitor
         person = None
@@ -1022,7 +1022,7 @@ class PublicChatAPIView(View):
             sender_person=person,
             body_text=message_text,
             channel=CHANNEL_IN_APP,
-            direction=DIRECTION_INBOUND,
+            direction=MessageDirection.INBOUND,
         )
 
         # Broadcast via WebSocket for real-time updates
@@ -1033,7 +1033,7 @@ class PublicChatAPIView(View):
             conversation_id=str(conversation.pk),
             message_id=str(message.pk),
             message_text=message_text,
-            direction="inbound",
+            direction=MessageDirection.INBOUND,
             status=message.status,
             created_at=message.created_at.isoformat(),
         )

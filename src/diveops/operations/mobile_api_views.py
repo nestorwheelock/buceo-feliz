@@ -378,12 +378,12 @@ class MobileSendMessageView(View):
         msg = Message.objects.create(
             conversation=conversation,
             sender_person=None,  # Staff message, no Person sender
-            direction="outbound",
+            direction=MessageDirection.OUTBOUND,
             channel="in_app",
             from_address=request.user.email,
             to_address=person.email or "",
             body_text=message_text,
-            status="sent",
+            status=MessageStatus.SENT,
             sent_at=timezone.now(),
         )
 
@@ -399,7 +399,7 @@ class MobileSendMessageView(View):
             conversation_id=str(conversation.pk),
             message_id=str(msg.pk),
             message_text=message_text,
-            direction="outbound",
+            direction=MessageDirection.OUTBOUND,
             status=msg.status,
             created_at=msg.created_at.isoformat(),
         )
@@ -431,7 +431,7 @@ def _get_initials(person):
 
 def _get_sender_name(msg):
     """Get sender name for a message."""
-    if msg.direction == "inbound":
+    if msg.direction == MessageDirection.INBOUND:
         if msg.sender_person:
             name = f"{msg.sender_person.first_name} {msg.sender_person.last_name}".strip()
             return name or msg.sender_person.email or "Visitor"
