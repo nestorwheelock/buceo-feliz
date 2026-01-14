@@ -1000,7 +1000,7 @@ class CustomerProfileView(View):
             },
             "medical": {
                 "clearance_valid_until": diver.medical_clearance_valid_until.isoformat() if diver.medical_clearance_valid_until else None,
-                "is_current": diver.is_medical_current(),
+                "is_current": diver.is_medical_current,
                 "waiver_valid": diver.is_waiver_valid(),
             },
             "gear_sizing": {

@@ -78,7 +78,6 @@ def diver(db, user):
     )
     return DiverProfile.objects.create(
         person=person,
-        experience_level="certified",
     )
 
 
