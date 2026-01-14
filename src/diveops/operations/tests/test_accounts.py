@@ -248,19 +248,19 @@ class TestSeedAccountsIdempotency:
 
     def test_seed_accounts_idempotent(self, dive_shop):
         """Calling seed_accounts twice should not duplicate accounts."""
-        from django_ledger.models import AccountModel
+        from django_ledger.models import Account
 
         # Seed once
         account_set1 = seed_accounts(dive_shop, "MXN")
 
         # Count accounts
-        count_after_first = AccountModel.objects.count()
+        count_after_first = Account.objects.count()
 
         # Seed again
         account_set2 = seed_accounts(dive_shop, "MXN")
 
         # Count should be the same
-        count_after_second = AccountModel.objects.count()
+        count_after_second = Account.objects.count()
         assert count_after_first == count_after_second
 
         # Same accounts returned

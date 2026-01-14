@@ -86,15 +86,21 @@ def excursion_type(db):
 
 
 @pytest.fixture
-def excursion(dive_shop, excursion_type):
+def excursion(dive_shop, excursion_type, staff_user):
     """Create an excursion."""
     from diveops.operations.models import Excursion
+    from decimal import Decimal
+
+    departure = timezone.now() + timezone.timedelta(days=1)
     return Excursion.objects.create(
         dive_shop=dive_shop,
         excursion_type=excursion_type,
-        departure_time=timezone.now() + timezone.timedelta(days=1),
-        capacity=12,
+        departure_time=departure,
+        return_time=departure + timezone.timedelta(hours=4),
+        max_divers=12,
+        price_per_diver=Decimal("150.00"),
         status="scheduled",
+        created_by=staff_user,
     )
 
 
@@ -322,7 +328,7 @@ class TestDiveSiteListViewPermissions:
 
     def test_anonymous_redirected_to_login(self, anonymous_client):
         """Anonymous users are redirected to login."""
-        url = reverse("diveops:dive-site-list")
+        url = reverse("diveops:staff-site-list")
         response = anonymous_client.get(url)
         assert response.status_code == 302
         assert "/login/" in response.url or "/accounts/login/" in response.url
@@ -330,14 +336,14 @@ class TestDiveSiteListViewPermissions:
     def test_non_staff_forbidden(self, client, regular_user):
         """Non-staff users get 403."""
         client.force_login(regular_user)
-        url = reverse("diveops:dive-site-list")
+        url = reverse("diveops:staff-site-list")
         response = client.get(url)
         assert response.status_code == 403
 
     def test_staff_allowed(self, client, staff_user):
         """Staff users can view dive site list."""
         client.force_login(staff_user)
-        url = reverse("diveops:dive-site-list")
+        url = reverse("diveops:staff-site-list")
         response = client.get(url)
         assert response.status_code == 200
 

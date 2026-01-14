@@ -62,15 +62,21 @@ class TestBookExcursion:
         )
 
     @pytest.fixture
-    def excursion(self, dive_shop, excursion_type):
+    def excursion(self, dive_shop, excursion_type, user):
         """Create an excursion with capacity."""
         from diveops.operations.models import Excursion
+        from decimal import Decimal
+
+        departure = timezone.now() + timezone.timedelta(days=1)
         return Excursion.objects.create(
             dive_shop=dive_shop,
             excursion_type=excursion_type,
-            departure_time=timezone.now() + timezone.timedelta(days=1),
-            capacity=12,
+            departure_time=departure,
+            return_time=departure + timezone.timedelta(hours=4),
+            max_divers=12,
+            price_per_diver=Decimal("150.00"),
             status="scheduled",
+            created_by=user,
         )
 
     def test_creates_booking(self, excursion, diver, user):
@@ -167,15 +173,21 @@ class TestCancelBooking:
         )
 
     @pytest.fixture
-    def excursion(self, dive_shop, excursion_type):
+    def excursion(self, dive_shop, excursion_type, user):
         """Create an excursion."""
         from diveops.operations.models import Excursion
+        from decimal import Decimal
+
+        departure = timezone.now() + timezone.timedelta(days=1)
         return Excursion.objects.create(
             dive_shop=dive_shop,
             excursion_type=excursion_type,
-            departure_time=timezone.now() + timezone.timedelta(days=1),
-            capacity=12,
+            departure_time=departure,
+            return_time=departure + timezone.timedelta(hours=4),
+            max_divers=12,
+            price_per_diver=Decimal("150.00"),
             status="scheduled",
+            created_by=user,
         )
 
     @pytest.fixture
@@ -259,15 +271,21 @@ class TestStartExcursion:
         )
 
     @pytest.fixture
-    def excursion(self, dive_shop, excursion_type):
+    def excursion(self, dive_shop, excursion_type, user):
         """Create a scheduled excursion."""
         from diveops.operations.models import Excursion
+        from decimal import Decimal
+
+        departure = timezone.now() + timezone.timedelta(days=1)
         return Excursion.objects.create(
             dive_shop=dive_shop,
             excursion_type=excursion_type,
-            departure_time=timezone.now() + timezone.timedelta(days=1),
-            capacity=12,
+            departure_time=departure,
+            return_time=departure + timezone.timedelta(hours=4),
+            max_divers=12,
+            price_per_diver=Decimal("150.00"),
             status="scheduled",
+            created_by=user,
         )
 
     def test_starts_excursion(self, excursion, user):
@@ -318,15 +336,21 @@ class TestCompleteExcursion:
         )
 
     @pytest.fixture
-    def in_progress_excursion(self, dive_shop, excursion_type):
+    def in_progress_excursion(self, dive_shop, excursion_type, user):
         """Create an in-progress excursion."""
         from diveops.operations.models import Excursion
+        from decimal import Decimal
+
+        departure = timezone.now() - timezone.timedelta(hours=2)
         return Excursion.objects.create(
             dive_shop=dive_shop,
             excursion_type=excursion_type,
-            departure_time=timezone.now() - timezone.timedelta(hours=2),
-            capacity=12,
+            departure_time=departure,
+            return_time=departure + timezone.timedelta(hours=4),
+            max_divers=12,
+            price_per_diver=Decimal("150.00"),
             status="in_progress",
+            created_by=user,
         )
 
     def test_completes_excursion(self, in_progress_excursion, user):
@@ -393,15 +417,21 @@ class TestBookingConcurrency:
         )
 
     @pytest.fixture
-    def excursion(self, dive_shop, excursion_type):
+    def excursion(self, dive_shop, excursion_type, user):
         """Create an excursion with limited capacity."""
         from diveops.operations.models import Excursion
+        from decimal import Decimal
+
+        departure = timezone.now() + timezone.timedelta(days=1)
         return Excursion.objects.create(
             dive_shop=dive_shop,
             excursion_type=excursion_type,
-            departure_time=timezone.now() + timezone.timedelta(days=1),
-            capacity=1,  # Only 1 spot
+            departure_time=departure,
+            return_time=departure + timezone.timedelta(hours=4),
+            max_divers=1,  # Only 1 spot
+            price_per_diver=Decimal("150.00"),
             status="scheduled",
+            created_by=user,
         )
 
     def test_concurrent_bookings_only_one_succeeds(self, excursion, diver, user):

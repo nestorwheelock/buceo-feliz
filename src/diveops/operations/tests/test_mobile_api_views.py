@@ -318,7 +318,7 @@ class TestCustomerBookingsView:
         assert data["past"] == []
 
     def test_bookings_with_data(
-        self, api_client, customer_token, customer_person, dive_shop, excursion_type
+        self, api_client, customer_token, customer_person, dive_shop, excursion_type, staff_user
     ):
         """Return bookings categorized by upcoming/past."""
         # Create diver profile for customer
@@ -334,15 +334,21 @@ class TestCustomerBookingsView:
             dive_shop=dive_shop,
             excursion_type=excursion_type,
             departure_time=tomorrow,
-            capacity=10,
+            return_time=tomorrow + timedelta(hours=4),
+            max_divers=10,
+            price_per_diver=Decimal("150.00"),
             status="scheduled",
+            created_by=staff_user,
         )
         past_excursion = Excursion.objects.create(
             dive_shop=dive_shop,
             excursion_type=excursion_type,
             departure_time=yesterday,
-            capacity=10,
+            return_time=yesterday + timedelta(hours=4),
+            max_divers=10,
+            price_per_diver=Decimal("150.00"),
             status="completed",
+            created_by=staff_user,
         )
 
         # Create bookings
@@ -582,9 +588,16 @@ def diver_profile(db, customer_person):
 def diver_certification(db, diver_profile):
     """Create a certification for the diver."""
     from diveops.operations.models import CertificationLevel, DiverCertification
+
+    # Create agency organization for PADI
+    agency = Organization.objects.create(
+        name="PADI",
+        org_type="certification_agency",
+    )
     level = CertificationLevel.objects.create(
         name="Advanced Open Water",
-        agency="PADI",
+        code="aow",
+        agency=agency,
         rank=2,
     )
     return DiverCertification.objects.create(
@@ -598,12 +611,23 @@ def diver_certification(db, diver_profile):
 @pytest.fixture
 def emergency_contact(db, customer_person):
     """Create an emergency contact for the customer."""
-    from diveops.operations.models import EmergencyContact
-    return EmergencyContact.objects.create(
-        person=customer_person,
-        name="Jane Diver",
-        relationship="Spouse",
+    from diveops.operations.models import DiverProfile, EmergencyContact
+
+    # Create diver profile for customer
+    diver = DiverProfile.objects.create(person=customer_person)
+
+    # Create emergency contact person
+    contact_person = Person.objects.create(
+        first_name="Jane",
+        last_name="Diver",
+        email="jane.diver@example.com",
         phone="+1-555-123-4567",
+    )
+
+    return EmergencyContact.objects.create(
+        diver=diver,
+        contact_person=contact_person,
+        relationship="spouse",
         priority=1,
     )
 

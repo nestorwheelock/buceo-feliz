@@ -67,15 +67,21 @@ class TestCreateRevenueSettlement:
         )
 
     @pytest.fixture
-    def excursion(self, dive_shop, excursion_type):
+    def excursion(self, dive_shop, excursion_type, user):
         """Create an excursion."""
         from diveops.operations.models import Excursion
+        from decimal import Decimal
+
+        departure = timezone.now() + timezone.timedelta(days=1)
         return Excursion.objects.create(
             dive_shop=dive_shop,
             excursion_type=excursion_type,
-            departure_time=timezone.now() + timezone.timedelta(days=1),
-            capacity=12,
+            departure_time=departure,
+            return_time=departure + timezone.timedelta(hours=4),
+            max_divers=12,
+            price_per_diver=Decimal("150.00"),
             status="scheduled",
+            created_by=user,
         )
 
     @pytest.fixture
@@ -191,15 +197,21 @@ class TestCreateRefundSettlement:
         )
 
     @pytest.fixture
-    def excursion(self, dive_shop, excursion_type):
+    def excursion(self, dive_shop, excursion_type, user):
         """Create an excursion."""
         from diveops.operations.models import Excursion
+        from decimal import Decimal
+
+        departure = timezone.now() + timezone.timedelta(days=1)
         return Excursion.objects.create(
             dive_shop=dive_shop,
             excursion_type=excursion_type,
-            departure_time=timezone.now() + timezone.timedelta(days=1),
-            capacity=12,
+            departure_time=departure,
+            return_time=departure + timezone.timedelta(hours=4),
+            max_divers=12,
+            price_per_diver=Decimal("150.00"),
             status="scheduled",
+            created_by=user,
         )
 
     @pytest.fixture
@@ -344,15 +356,21 @@ class TestCheckIn:
         )
 
     @pytest.fixture
-    def excursion(self, dive_shop, excursion_type):
+    def excursion(self, dive_shop, excursion_type, user):
         """Create an excursion."""
         from diveops.operations.models import Excursion
+        from decimal import Decimal
+
+        departure = timezone.now() + timezone.timedelta(days=1)
         return Excursion.objects.create(
             dive_shop=dive_shop,
             excursion_type=excursion_type,
-            departure_time=timezone.now() + timezone.timedelta(days=1),
-            capacity=12,
+            departure_time=departure,
+            return_time=departure + timezone.timedelta(hours=4),
+            max_divers=12,
+            price_per_diver=Decimal("150.00"),
             status="scheduled",
+            created_by=user,
         )
 
     @pytest.fixture
@@ -476,15 +494,21 @@ class TestSettlementConcurrency:
         )
 
     @pytest.fixture
-    def excursion(self, dive_shop, excursion_type):
+    def excursion(self, dive_shop, excursion_type, user):
         """Create an excursion."""
         from diveops.operations.models import Excursion
+        from decimal import Decimal
+
+        departure = timezone.now() + timezone.timedelta(days=1)
         return Excursion.objects.create(
             dive_shop=dive_shop,
             excursion_type=excursion_type,
-            departure_time=timezone.now() + timezone.timedelta(days=1),
-            capacity=12,
+            departure_time=departure,
+            return_time=departure + timezone.timedelta(hours=4),
+            max_divers=12,
+            price_per_diver=Decimal("150.00"),
             status="scheduled",
+            created_by=user,
         )
 
     @pytest.fixture
