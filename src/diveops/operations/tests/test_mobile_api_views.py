@@ -148,6 +148,7 @@ def excursion_type(db):
 # =============================================================================
 
 
+@pytest.mark.django_db
 class TestVersionCheckView:
     """Tests for GET /api/mobile/version/check/"""
 
@@ -218,6 +219,7 @@ class TestVersionCheckView:
 # =============================================================================
 
 
+@pytest.mark.django_db
 class TestCustomerLoginView:
     """Tests for POST /api/mobile/customer/login/"""
 
@@ -297,6 +299,7 @@ class TestCustomerLoginView:
 # =============================================================================
 
 
+@pytest.mark.django_db
 class TestCustomerBookingsView:
     """Tests for GET /api/mobile/customer/bookings/"""
 
@@ -356,11 +359,13 @@ class TestCustomerBookingsView:
             excursion=upcoming_excursion,
             diver=diver,
             status="confirmed",
+            booked_by=staff_user,
         )
         Booking.objects.create(
             excursion=past_excursion,
             diver=diver,
             status="confirmed",
+            booked_by=staff_user,
         )
 
         response = api_client.get(
@@ -381,6 +386,7 @@ class TestCustomerBookingsView:
 # =============================================================================
 
 
+@pytest.mark.django_db
 class TestLocationUpdateView:
     """Tests for POST /api/mobile/location/"""
 
@@ -474,6 +480,7 @@ class TestLocationUpdateView:
 # =============================================================================
 
 
+@pytest.mark.django_db
 class TestLocationSettingsView:
     """Tests for GET/PUT /api/mobile/location/settings/"""
 
@@ -632,6 +639,7 @@ def emergency_contact(db, customer_person):
     )
 
 
+@pytest.mark.django_db
 class TestCustomerProfileViewAuth:
     """Auth tests for GET/PUT /api/mobile/customer/profile/"""
 
@@ -706,6 +714,7 @@ class TestCustomerProfileViewAuth:
         assert data["gear_sizing"]["weight_kg"] == "80.0"
 
 
+@pytest.mark.django_db
 class TestCustomerCertificationsViewAuth:
     """Auth tests for GET /api/mobile/customer/certifications/"""
 
@@ -745,6 +754,7 @@ class TestCustomerCertificationsViewAuth:
         assert data["certifications"] == []
 
 
+@pytest.mark.django_db
 class TestCustomerEmergencyContactsViewAuth:
     """Auth tests for GET /api/mobile/customer/emergency-contacts/"""
 

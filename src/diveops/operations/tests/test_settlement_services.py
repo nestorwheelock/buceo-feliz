@@ -238,6 +238,8 @@ class TestCreateRefundSettlement:
             refund_percent=100,
             original_amount=Decimal("150.00"),
             currency="USD",
+            hours_before_departure=48,
+            policy_tier_applied={"hours": 24, "refund_percent": 100},
             reason="Full refund - cancelled in time",
         )
 
@@ -279,6 +281,8 @@ class TestCreateRefundSettlement:
             refund_percent=0,
             original_amount=Decimal("150.00"),
             currency="USD",
+            hours_before_departure=1,
+            policy_tier_applied={"hours": 0, "refund_percent": 0},
             reason="No refund - cancelled too late",
         )
 

@@ -1,6 +1,7 @@
 """Tests for booking flow services.
 
 Tests for book_excursion, cancel_booking, and related booking operations.
+Uses shared fixtures from conftest.py.
 """
 
 import pytest
@@ -12,72 +13,6 @@ from django.utils import timezone
 @pytest.mark.django_db
 class TestBookExcursion:
     """Tests for book_excursion service."""
-
-    @pytest.fixture
-    def user(self):
-        """Create a test user."""
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        return User.objects.create_user(
-            username="teststaff",
-            email="teststaff@example.com",
-            password="testpass123",
-        )
-
-    @pytest.fixture
-    def dive_shop(self):
-        """Create a dive shop organization."""
-        from django_parties.models import Organization
-        return Organization.objects.create(
-            name="Test Dive Shop",
-            org_type="dive_shop",
-        )
-
-    @pytest.fixture
-    def person(self):
-        """Create a person for the diver."""
-        from django_parties.models import Person
-        return Person.objects.create(
-            first_name="Test",
-            last_name="Diver",
-            email="diver@example.com",
-        )
-
-    @pytest.fixture
-    def diver(self, person):
-        """Create a diver profile."""
-        from diveops.operations.models import DiverProfile
-        return DiverProfile.objects.create(person=person)
-
-    @pytest.fixture
-    def excursion_type(self):
-        """Create an excursion type."""
-        from diveops.operations.models import ExcursionType
-        return ExcursionType.objects.create(
-            name="Morning 2-Tank",
-            slug="morning-2-tank",
-            dive_mode="boat",
-            time_of_day="day",
-            base_price=Decimal("150.00"),
-        )
-
-    @pytest.fixture
-    def excursion(self, dive_shop, excursion_type, user):
-        """Create an excursion with capacity."""
-        from diveops.operations.models import Excursion
-        from decimal import Decimal
-
-        departure = timezone.now() + timezone.timedelta(days=1)
-        return Excursion.objects.create(
-            dive_shop=dive_shop,
-            excursion_type=excursion_type,
-            departure_time=departure,
-            return_time=departure + timezone.timedelta(hours=4),
-            max_divers=12,
-            price_per_diver=Decimal("150.00"),
-            status="scheduled",
-            created_by=user,
-        )
 
     def test_creates_booking(self, excursion, diver, user):
         """book_excursion creates a confirmed booking."""
@@ -125,73 +60,7 @@ class TestCancelBooking:
     """Tests for cancel_booking service."""
 
     @pytest.fixture
-    def user(self):
-        """Create a test user."""
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        return User.objects.create_user(
-            username="teststaff",
-            email="teststaff@example.com",
-            password="testpass123",
-        )
-
-    @pytest.fixture
-    def dive_shop(self):
-        """Create a dive shop organization."""
-        from django_parties.models import Organization
-        return Organization.objects.create(
-            name="Test Dive Shop",
-            org_type="dive_shop",
-        )
-
-    @pytest.fixture
-    def person(self):
-        """Create a person for the diver."""
-        from django_parties.models import Person
-        return Person.objects.create(
-            first_name="Test",
-            last_name="Diver",
-            email="diver@example.com",
-        )
-
-    @pytest.fixture
-    def diver(self, person):
-        """Create a diver profile."""
-        from diveops.operations.models import DiverProfile
-        return DiverProfile.objects.create(person=person)
-
-    @pytest.fixture
-    def excursion_type(self):
-        """Create an excursion type."""
-        from diveops.operations.models import ExcursionType
-        return ExcursionType.objects.create(
-            name="Morning 2-Tank",
-            slug="morning-2-tank",
-            dive_mode="boat",
-            time_of_day="day",
-            base_price=Decimal("150.00"),
-        )
-
-    @pytest.fixture
-    def excursion(self, dive_shop, excursion_type, user):
-        """Create an excursion."""
-        from diveops.operations.models import Excursion
-        from decimal import Decimal
-
-        departure = timezone.now() + timezone.timedelta(days=1)
-        return Excursion.objects.create(
-            dive_shop=dive_shop,
-            excursion_type=excursion_type,
-            departure_time=departure,
-            return_time=departure + timezone.timedelta(hours=4),
-            max_divers=12,
-            price_per_diver=Decimal("150.00"),
-            status="scheduled",
-            created_by=user,
-        )
-
-    @pytest.fixture
-    def booking(self, excursion, diver, user):
+    def booking(self, db, excursion, diver, user):
         """Create a confirmed booking."""
         from diveops.operations.models import Booking
         return Booking.objects.create(
@@ -238,56 +107,6 @@ class TestCancelBooking:
 class TestStartExcursion:
     """Tests for start_excursion service."""
 
-    @pytest.fixture
-    def user(self):
-        """Create a test user."""
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        return User.objects.create_user(
-            username="teststaff",
-            email="teststaff@example.com",
-            password="testpass123",
-        )
-
-    @pytest.fixture
-    def dive_shop(self):
-        """Create a dive shop organization."""
-        from django_parties.models import Organization
-        return Organization.objects.create(
-            name="Test Dive Shop",
-            org_type="dive_shop",
-        )
-
-    @pytest.fixture
-    def excursion_type(self):
-        """Create an excursion type."""
-        from diveops.operations.models import ExcursionType
-        return ExcursionType.objects.create(
-            name="Morning 2-Tank",
-            slug="morning-2-tank",
-            dive_mode="boat",
-            time_of_day="day",
-            base_price=Decimal("150.00"),
-        )
-
-    @pytest.fixture
-    def excursion(self, dive_shop, excursion_type, user):
-        """Create a scheduled excursion."""
-        from diveops.operations.models import Excursion
-        from decimal import Decimal
-
-        departure = timezone.now() + timezone.timedelta(days=1)
-        return Excursion.objects.create(
-            dive_shop=dive_shop,
-            excursion_type=excursion_type,
-            departure_time=departure,
-            return_time=departure + timezone.timedelta(hours=4),
-            max_divers=12,
-            price_per_diver=Decimal("150.00"),
-            status="scheduled",
-            created_by=user,
-        )
-
     def test_starts_excursion(self, excursion, user):
         """start_excursion transitions to in_progress."""
         from diveops.operations._services import start_excursion
@@ -304,42 +123,9 @@ class TestCompleteExcursion:
     """Tests for complete_excursion service."""
 
     @pytest.fixture
-    def user(self):
-        """Create a test user."""
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        return User.objects.create_user(
-            username="teststaff",
-            email="teststaff@example.com",
-            password="testpass123",
-        )
-
-    @pytest.fixture
-    def dive_shop(self):
-        """Create a dive shop organization."""
-        from django_parties.models import Organization
-        return Organization.objects.create(
-            name="Test Dive Shop",
-            org_type="dive_shop",
-        )
-
-    @pytest.fixture
-    def excursion_type(self):
-        """Create an excursion type."""
-        from diveops.operations.models import ExcursionType
-        return ExcursionType.objects.create(
-            name="Morning 2-Tank",
-            slug="morning-2-tank",
-            dive_mode="boat",
-            time_of_day="day",
-            base_price=Decimal("150.00"),
-        )
-
-    @pytest.fixture
-    def in_progress_excursion(self, dive_shop, excursion_type, user):
+    def in_progress_excursion(self, db, dive_shop, excursion_type, user):
         """Create an in-progress excursion."""
         from diveops.operations.models import Excursion
-        from decimal import Decimal
 
         departure = timezone.now() - timezone.timedelta(hours=2)
         return Excursion.objects.create(
@@ -369,58 +155,9 @@ class TestBookingConcurrency:
     """Concurrency tests for booking services."""
 
     @pytest.fixture
-    def user(self):
-        """Create a test user."""
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        return User.objects.create_user(
-            username="teststaff",
-            email="teststaff@example.com",
-            password="testpass123",
-        )
-
-    @pytest.fixture
-    def dive_shop(self):
-        """Create a dive shop organization."""
-        from django_parties.models import Organization
-        return Organization.objects.create(
-            name="Test Dive Shop",
-            org_type="dive_shop",
-        )
-
-    @pytest.fixture
-    def person(self):
-        """Create a person for the diver."""
-        from django_parties.models import Person
-        return Person.objects.create(
-            first_name="Test",
-            last_name="Diver",
-            email="diver@example.com",
-        )
-
-    @pytest.fixture
-    def diver(self, person):
-        """Create a diver profile."""
-        from diveops.operations.models import DiverProfile
-        return DiverProfile.objects.create(person=person)
-
-    @pytest.fixture
-    def excursion_type(self):
-        """Create an excursion type."""
-        from diveops.operations.models import ExcursionType
-        return ExcursionType.objects.create(
-            name="Morning 2-Tank",
-            slug="morning-2-tank",
-            dive_mode="boat",
-            time_of_day="day",
-            base_price=Decimal("150.00"),
-        )
-
-    @pytest.fixture
-    def excursion(self, dive_shop, excursion_type, user):
-        """Create an excursion with limited capacity."""
+    def limited_excursion(self, db, dive_shop, excursion_type, user):
+        """Create an excursion with limited capacity (1 spot)."""
         from diveops.operations.models import Excursion
-        from decimal import Decimal
 
         departure = timezone.now() + timezone.timedelta(days=1)
         return Excursion.objects.create(
@@ -428,13 +165,13 @@ class TestBookingConcurrency:
             excursion_type=excursion_type,
             departure_time=departure,
             return_time=departure + timezone.timedelta(hours=4),
-            max_divers=1,  # Only 1 spot
+            max_divers=1,
             price_per_diver=Decimal("150.00"),
             status="scheduled",
             created_by=user,
         )
 
-    def test_concurrent_bookings_only_one_succeeds(self, excursion, diver, user):
+    def test_concurrent_bookings_only_one_succeeds(self, limited_excursion, diver, user):
         """Two concurrent booking attempts for same diver should only create one.
 
         The select_for_update() lock prevents duplicates.
@@ -453,7 +190,7 @@ class TestBookingConcurrency:
             try:
                 barrier.wait(timeout=5)
                 result = book_excursion(
-                    excursion, diver, user, skip_eligibility_check=True
+                    limited_excursion, diver, user, skip_eligibility_check=True
                 )
                 results.append(result)
             except BookingError as e:
