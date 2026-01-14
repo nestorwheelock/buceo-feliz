@@ -724,7 +724,11 @@ class RemoveBuddyView(CustomerPortalMixin, View):
 
 
 class CustomerMessagesInboxView(CustomerPortalMixin, TemplateView):
-    """List conversations for current customer Person."""
+    """List conversations for current customer Person.
+
+    Uses ConversationQueryService to ensure consistent query patterns
+    across all interfaces (staff, customer, mobile).
+    """
 
     template_name = "diveops/portal/messages/inbox.html"
 
@@ -733,9 +737,11 @@ class CustomerMessagesInboxView(CustomerPortalMixin, TemplateView):
         diver = get_current_diver(self.request.user)
 
         if diver and diver.person:
-            from django_communication.services import get_customer_inbox
+            from .services.chat_queries import ConversationQueryService
 
-            context["conversations"] = get_customer_inbox(diver.person)
+            context["conversations"] = ConversationQueryService.list_for_customer(
+                person=diver.person
+            )
         else:
             context["conversations"] = []
 
@@ -769,10 +775,13 @@ class CustomerConversationDetailView(CustomerPortalMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         conversation, person = self.get_conversation()
 
-        from django_communication.services import get_conversation_messages
+        from .services.chat_queries import MessageQueryService
 
         context["conversation"] = conversation
-        context["messages_list"] = get_conversation_messages(conversation)
+        context["messages_list"] = MessageQueryService.get_messages(
+            conversation=conversation,
+            limit=MessageQueryService.DEFAULT_LIMIT_CUSTOMER,
+        )
         context["current_person"] = person
 
         # Get staff participant for read status display and avatar
