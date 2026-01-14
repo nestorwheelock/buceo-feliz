@@ -13,7 +13,7 @@ from typing import Optional
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Count, OuterRef, Q, Subquery, Value
+from django.db.models import BooleanField, Case, Count, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce, Concat
 from django.utils import timezone
 
@@ -68,9 +68,9 @@ class ConversationQueryService:
 
         Returns annotated queryset with:
         - last_message_preview (first 100 chars of last message)
-        - last_message_at
+        - last_message_at_annotated
         - last_message_direction
-        - needs_reply (bool: last message was inbound)
+        - needs_reply_annotated (bool: last message was inbound)
         - person_id (related Person's ID)
 
         Args:
@@ -113,13 +113,19 @@ class ConversationQueryService:
             last_message_direction=Subquery(latest_message.values("direction")[:1]),
         )
 
-        # Annotate needs_reply (last message was inbound)
+        # Annotate needs_reply_annotated (last message was inbound)
+        # Use Case/When to create a proper boolean, and use different name
+        # to avoid conflict with Conversation.needs_reply property
         qs = qs.annotate(
-            needs_reply=Q(last_message_direction=MessageDirection.INBOUND)
+            needs_reply_annotated=Case(
+                When(last_message_direction=MessageDirection.INBOUND, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
         )
 
         # Order by most recent activity
-        qs = qs.order_by("-last_message_at", "-updated_at")
+        qs = qs.order_by("-last_message_at_annotated", "-updated_at")
 
         # Apply limit
         if limit:
@@ -241,12 +247,17 @@ class ConversationQueryService:
         )
 
         # Needs reply: last message was inbound
+        # Use Case/When and different name to avoid conflict with property
         qs = qs.annotate(
-            needs_reply=Q(last_message_direction=MessageDirection.INBOUND)
+            needs_reply_annotated=Case(
+                When(last_message_direction=MessageDirection.INBOUND, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
         )
 
         # Order by most recent
-        qs = qs.order_by("-last_message_at", "-updated_at")
+        qs = qs.order_by("-last_message_at_annotated", "-updated_at")
 
         if limit:
             qs = qs[:limit]
