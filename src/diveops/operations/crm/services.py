@@ -349,50 +349,18 @@ def broadcast_conversation_message(
 
     Sends to the conversation room so all participants see the message.
 
-    Args:
-        conversation_id: UUID of the Conversation
-        message_id: UUID of the Message
-        message_text: The message body
-        sender_person_id: UUID of the sender Person
-        sender_name: Display name of sender
-        created_at: ISO timestamp of when message was created
+    Note: This function delegates to BroadcastService for a unified implementation.
+    Consider using BroadcastService.broadcast_on_commit() for new code.
     """
-    import logging
-    logger = logging.getLogger(__name__)
-
-    try:
-        from asgiref.sync import async_to_sync
-        from channels.layers import get_channel_layer
-
-        channel_layer = get_channel_layer()
-        if not channel_layer:
-            logger.warning("No channel layer configured, skipping WebSocket broadcast")
-            return
-
-        message_data = {
-            "type": "new_message",
-            "message_id": message_id,
-            "message": message_text,
-            "body": message_text,
-            "sender_person_id": sender_person_id,
-            "sender_name": sender_name,
-            "created_at": created_at or timezone.now().isoformat(),
-        }
-
-        # Broadcast to conversation room
-        conversation_room = f"chat_conversation_{conversation_id}"
-        async_to_sync(channel_layer.group_send)(conversation_room, message_data)
-
-        logger.debug(
-            "Broadcast conversation message via WebSocket",
-            extra={
-                "conversation_id": conversation_id,
-                "message_id": message_id,
-                "sender_person_id": sender_person_id,
-            },
-        )
-    except Exception as e:
-        logger.exception(f"Failed to broadcast conversation message: {e}")
+    from diveops.operations.services.broadcast import BroadcastService
+    BroadcastService.broadcast_conversation_message(
+        conversation_id=conversation_id,
+        message_id=message_id,
+        message_text=message_text,
+        sender_person_id=sender_person_id,
+        sender_name=sender_name,
+        created_at=created_at,
+    )
 
 
 def broadcast_chat_message(
@@ -409,6 +377,9 @@ def broadcast_chat_message(
 
     Sends to visitor, lead, and conversation room groups so all parties see the message.
 
+    Note: This function delegates to BroadcastService for a unified implementation.
+    Consider using BroadcastService.broadcast_on_commit() for new code.
+
     Args:
         person_id: UUID of the Person (lead)
         visitor_id: Visitor ID cookie value (for visitor's room)
@@ -419,50 +390,14 @@ def broadcast_chat_message(
         status: Message status (sent, delivered, read, etc.)
         created_at: ISO timestamp of when message was created
     """
-    import logging
-    logger = logging.getLogger(__name__)
-
-    try:
-        from asgiref.sync import async_to_sync
-        from channels.layers import get_channel_layer
-
-        channel_layer = get_channel_layer()
-        if not channel_layer:
-            logger.warning("No channel layer configured, skipping WebSocket broadcast")
-            return
-
-        message_data = {
-            "type": "new_message",
-            "message_id": message_id,
-            "message": message_text,
-            "direction": direction,
-            "status": status,
-            "created_at": created_at or timezone.now().isoformat(),
-        }
-
-        # Broadcast to lead room (for staff viewing this lead)
-        lead_room = f"chat_lead_{person_id}"
-        async_to_sync(channel_layer.group_send)(lead_room, message_data)
-
-        # Broadcast to conversation room (shared by both parties)
-        if conversation_id:
-            conversation_room = f"chat_conversation_{conversation_id}"
-            async_to_sync(channel_layer.group_send)(conversation_room, message_data)
-
-        # Broadcast to visitor room (legacy - for the visitor's chat widget)
-        if visitor_id:
-            visitor_room = f"chat_visitor_{visitor_id}"
-            async_to_sync(channel_layer.group_send)(visitor_room, message_data)
-
-        logger.info(
-            f"Broadcast chat message via WebSocket to rooms: lead={lead_room}, conv={conversation_id}, visitor={visitor_id}",
-            extra={
-                "person_id": person_id,
-                "visitor_id": visitor_id,
-                "message_id": message_id,
-                "direction": direction,
-            },
-        )
-    except Exception as e:
-        # Don't fail the main operation if WebSocket broadcast fails
-        logger.exception(f"Failed to broadcast chat message: {e}")
+    from diveops.operations.services.broadcast import BroadcastService
+    BroadcastService.broadcast_chat_message(
+        person_id=person_id,
+        visitor_id=visitor_id,
+        conversation_id=conversation_id,
+        message_id=message_id,
+        message_text=message_text,
+        direction=direction,
+        status=status,
+        created_at=created_at,
+    )
